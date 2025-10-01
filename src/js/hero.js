@@ -1,15 +1,57 @@
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
-
-
 // Initialize hero animations when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
+  loadHeroContent();
   initHeroAnimations();
   initButtonInteractions();
   initParticlesAnimation();
   initStatsAnimations();
 });
+
+// Load hero content from JSON
+async function loadHeroContent() {
+  try {
+    const heroData = await ContentLoader.fetchJSON('/src/content/hero.json');
+    if (!heroData) {
+      console.warn('Failed to load hero content, using default values');
+      return;
+    }
+
+    // Update description
+    const descriptionElement = document.querySelector('.hero-description p');
+    if (descriptionElement) {
+      descriptionElement.textContent = heroData.description;
+    }
+
+    // Update adjectives
+    const adjectiveElements = document.querySelectorAll('.adjective');
+    if (heroData.adjectives && heroData.adjectives.length >= 3) {
+      heroData.adjectives.forEach((adj, index) => {
+        if (adjectiveElements[index]) {
+          adjectiveElements[index].textContent = adj.adjective;
+        }
+      });
+    }
+
+    // Update stats
+    const statElements = document.querySelectorAll('.hero-stat');
+    if (heroData.stats && heroData.stats.length >= 3) {
+      heroData.stats.forEach((stat, index) => {
+        if (statElements[index]) {
+          const numberElement = statElements[index].querySelector('.hero-stat-number');
+          const labelElement = statElements[index].querySelector('.hero-stat-label');
+          
+          if (numberElement) numberElement.textContent = stat.number;
+          if (labelElement) labelElement.textContent = stat.label;
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error loading hero content:', error);
+  }
+}
 
 // Main hero animation function
 function initHeroAnimations() {

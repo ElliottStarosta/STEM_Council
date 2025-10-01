@@ -1,83 +1,6 @@
 
-const eventsData = [
-  {
-    id: 1,
-    name: "Summer Tech Conference 2025",
-    startDate: "2025-07-15",
-    endDate: "2025-07-17",
-    description:
-      "Join us for three days of cutting-edge technology discussions, networking opportunities, and hands-on workshops. This premier event brings together industry leaders, developers, and innovators from around the world to share insights on the latest trends in artificial intelligence, blockchain, and sustainable technology solutions. Experience keynote presentations from top tech executives, participate in interactive coding sessions, and connect with like-minded professionals who are shaping the future of technology.",
-    images: [
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1551818255-e6e10975cd17?w=800&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=800&h=400&fit=crop",
-    ],
-  },
-  {
-    id: 2,
-    name: "Green Innovation Workshop",
-    startDate: "2025-08-05",
-    endDate: "2025-08-05",
-    description:
-      "Discover sustainable solutions and eco-friendly technologies that are revolutionizing industries worldwide. This intensive one-day workshop focuses on practical applications of green technology, renewable energy systems, and sustainable business practices. Learn from environmental experts and successful entrepreneurs who have built thriving businesses while maintaining a commitment to environmental responsibility. Network with fellow eco-conscious professionals and explore opportunities for collaboration in the growing green economy.",
-    images: [
-      "src/images/green-workshop-1.jpg",
-      "src/images/green-workshop-2.jpg",
-    ],
-  },
-  {
-    id: 3,
-    name: "Digital Marketing Masterclass",
-    startDate: "2025-08-20",
-    endDate: "2025-08-22",
-    description:
-      "Master the art of digital marketing with comprehensive training sessions covering social media strategy, content creation, SEO optimization, and data analytics. This three-day intensive program is designed for marketing professionals, business owners, and entrepreneurs looking to enhance their digital presence and drive meaningful engagement with their target audience. Learn from industry experts who have successfully managed campaigns for Fortune 500 companies and emerging startups alike.",
-    images: [
-      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop",
-      "src/images/marketing-class.png",
-      "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=800&h=400&fit=crop",
-    ],
-  },
-  {
-    id: 4,
-    name: "AI & Machine Learning Summit",
-    startDate: "2025-09-10",
-    endDate: "2025-09-12",
-    description:
-      "Explore the latest developments in artificial intelligence and machine learning with leading researchers and practitioners in the field. This summit features deep-dive technical sessions, case studies from successful AI implementations, and discussions about the ethical implications of AI technology. Whether you're a data scientist, software engineer, or business leader, you'll gain valuable insights into how AI is transforming industries and creating new opportunities for innovation and growth.",
-    images: [
-      "src/images/ai-summit/main.jpg",
-      "src/images/ai-summit/speakers.png",
-    ],
-  },
-  {
-    id: 5,
-    name: "Startup Pitch Competition",
-    startDate: "2025-10-01",
-    endDate: "2025-10-01",
-    description:
-      "Watch innovative startups present their groundbreaking ideas to a panel of experienced investors and industry experts. This exciting competition showcases the most promising new ventures across various sectors including fintech, healthtech, edtech, and sustainable technology. Entrepreneurs will have the opportunity to secure funding, gain valuable feedback, and connect with potential partners and mentors. Join us for an inspiring day of innovation, entrepreneurship, and the future of business.",
-    images: [
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&h=400&fit=crop",
-      "src/images/startup-pitch.jpg",
-      "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=400&fit=crop",
-    ],
-  },
-  {
-    id: 6,
-    name: "Cybersecurity Best Practices",
-    startDate: "2025-10-25",
-    endDate: "2025-10-26",
-    description:
-      "Learn essential cybersecurity strategies and best practices to protect your organization from evolving digital threats. This comprehensive two-day program covers threat assessment, incident response, security architecture, and compliance requirements. Expert instructors will guide you through hands-on exercises, real-world case studies, and the latest security tools and technologies. Perfect for IT professionals, security officers, and business leaders who need to understand and implement effective cybersecurity measures.",
-    images: [
-      "src/images/cybersecurity/workshop.png",
-      "src/images/cybersecurity/lab.jpg",
-    ],
-  },
-];
-
-// const eventsData = [];
+// Events data will be loaded dynamically from markdown files
+let eventsData = [];
 
 // ==========================================
 // Events Class
@@ -90,13 +13,55 @@ class EventsManager {
     this.init();
   }
 
-  init() {
+  async init() {
+    await this.loadEvents();
     this.renderEvents();
     this.bindEvents();
     this.initAnimations();
     this.animateEventsParticles();
     // Store instance globally for utility functions
     window.eventsManager = this;
+  }
+
+  // Load events from markdown files
+  async loadEvents() {
+    try {
+      // List of event files (in a real implementation, this would be fetched from an API)
+      const eventFiles = [
+        '2025-07-15-summer-tech-conference-2025.md',
+        '2025-08-05-green-innovation-workshop.md',
+        '2025-08-20-digital-marketing-masterclass.md',
+        '2025-09-10-ai-machine-learning-summit.md',
+        '2025-10-01-startup-pitch-competition.md',
+        '2025-10-25-cybersecurity-best-practices.md'
+      ];
+
+      const loadedEvents = [];
+      
+      for (let i = 0; i < eventFiles.length; i++) {
+        const file = eventFiles[i];
+        const content = await ContentLoader.fetchMarkdown(`/src/content/events/${file}`);
+        
+        if (content && content.frontmatter) {
+          const event = {
+            id: i + 1,
+            name: content.frontmatter.name,
+            startDate: content.frontmatter.startDate,
+            endDate: content.frontmatter.endDate,
+            description: content.body,
+            images: content.frontmatter.images ? content.frontmatter.images.map(img => img.image) : []
+          };
+          loadedEvents.push(event);
+        }
+      }
+      
+      eventsData = loadedEvents;
+      console.log('Loaded events:', eventsData);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      // Fallback to empty array
+      eventsData = [];
+    }
   }
 
   // Resolve image path - handles both URLs and local paths

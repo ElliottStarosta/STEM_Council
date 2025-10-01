@@ -1,0 +1,44 @@
+{
+  "missionStatement": "Empowering our fellow Lions with STEM opportunities",
+  "whatWeDo": "The STEM Council was established by the Head of STEM to create a thriving ecosystem of events, activities, and resources for Lions at Earl of March. We organize and support the STEM community, connecting students with opportunities to explore their passions and discover new interests.",
+  "ourImpact": "At Earl of March S.S. in Ontario, we're proud to support a diverse range of STEM programs including Computer Science, Computer Engineering, and more. Our council ensures that every Lion has the opportunity to explore what STEM truly means.",
+  "features": [
+    {
+      "title": "Organize Events",
+      "description": "From hackathons to science fairs, we create engaging STEM experiences",
+      "icon": "ri-focus-2-line"
+    },
+    {
+      "title": "Connect Communities",
+      "description": "Bringing together diverse STEM clubs and passionate students",
+      "icon": "ri-shake-hands-fill"
+    },
+    {
+      "title": "Provide Resources",
+      "description": "Curating tools, materials, and opportunities for STEM exploration",
+      "icon": "ri-book-open-line"
+    }
+  ],
+  "impactStats": [
+    {
+      "number": "500+",
+      "label": "Students Engaged",
+      "description": "Active participation across all STEM programs"
+    },
+    {
+      "number": "15+",
+      "label": "STEM Clubs",
+      "description": "From robotics to environmental science"
+    },
+    {
+      "number": "50+",
+      "label": "Events Hosted",
+      "description": "Workshops, competitions, and showcases"
+    },
+    {
+      "number": "100%",
+      "label": "Success Rate",
+      "description": "Students finding their STEM passion"
+    }
+  ]
+}

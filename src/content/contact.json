@@ -1,0 +1,23 @@
+{
+  "subtitle": "Have questions about our STEM programs? Want to join a club or attend an event? We'd love to hear from you!",
+  "contactMethods": [
+    {
+      "type": "Email Us",
+      "value": "earlstem@gmail.com",
+      "link": "mailto:earlstem@gmail.com",
+      "icon": "ri-mail-line"
+    },
+    {
+      "type": "Instagram",
+      "value": "@earl.stem.council",
+      "link": "https://instagram.com/earl.stem.council",
+      "icon": "ri-instagram-line"
+    },
+    {
+      "type": "Discord",
+      "value": "Join our community server",
+      "link": "https://discord.gg/your-invite-link",
+      "icon": "ri-discord-line"
+    }
+  ]
+}

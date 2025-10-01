@@ -7,6 +7,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize GSAP ScrollTrigger
   gsap.registerPlugin(ScrollTrigger);
   
+  // Load contact content
+  loadContactContent();
+  
   // Animate section header
   gsap.to('.contact-title', {
     opacity: 1,
@@ -161,4 +164,41 @@ document.addEventListener("DOMContentLoaded", function () {
       submitBtn.disabled = false;
     }
   });
-}); 
+});
+
+// Load contact content from JSON
+async function loadContactContent() {
+  try {
+    const contactData = await ContentLoader.fetchJSON('/src/content/contact.json');
+    if (!contactData) {
+      console.warn('Failed to load contact content, using default values');
+      return;
+    }
+
+    // Update subtitle
+    const subtitleElement = document.querySelector('.contact-subtitle');
+    if (subtitleElement) {
+      subtitleElement.textContent = contactData.subtitle;
+    }
+
+    // Update contact methods
+    const contactInfo = document.querySelector('.contact-info');
+    if (contactInfo && contactData.contactMethods) {
+      const contactMethodsHTML = contactData.contactMethods.map(method => `
+        <a href="${method.link}" class="contact-card-link" target="_blank">
+          <div class="contact-card">
+            <div class="icon-wrapper">
+              <i class="${method.icon}"></i>
+            </div>
+            <h3>${method.type}</h3>
+            <p>${method.value}</p>
+          </div>
+        </a>
+      `).join('');
+
+      contactInfo.innerHTML = contactMethodsHTML;
+    }
+  } catch (error) {
+    console.error('Error loading contact content:', error);
+  }
+} 

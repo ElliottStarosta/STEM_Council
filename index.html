@@ -937,6 +937,7 @@
   <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
   <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollToPlugin.min.js"></script>
 
+  <script src="src/js/content-loader.js"></script>
   <script type="module" src="src/js/header.js"></script>
   <script type="module" src="src/js/scrolling.js"></script>
   <script type="module" src="src/js/hero.js"></script>
@@ -947,6 +948,20 @@
   <script type="module" src="src/js/cursor.js"></script>
   <script type="module" src="src/js/resources.js"></script>
   <script type="module" src="src/js/contact.js"></script>
+
+  <!-- Netlify Identity Widget -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", user => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
 </body>
 
 </html>

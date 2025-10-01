@@ -1,6 +1,7 @@
 
 // Clubs Section JavaScript
 document.addEventListener('DOMContentLoaded', function() {
+  loadClubsContent();
   initClubsSection();
 });
 
@@ -278,3 +279,53 @@ function initParallaxEffect() {
 window.addEventListener('load', () => {
   initParallaxEffect();
 });
+
+// Load clubs content from markdown files
+async function loadClubsContent() {
+  try {
+    // List of club files
+    const clubFiles = [
+      'computer-science-club.md',
+      'arduino-club.md'
+    ];
+
+    const clubsGrid = document.querySelector('.clubs-grid');
+    if (!clubsGrid) return;
+
+    let clubsHTML = '';
+    
+    for (let i = 0; i < clubFiles.length; i++) {
+      const file = clubFiles[i];
+      const content = await ContentLoader.fetchMarkdown(`/src/content/clubs/${file}`);
+      
+      if (content && content.frontmatter) {
+        const club = content.frontmatter;
+        const socialLinksHTML = club.socialLinks ? club.socialLinks.map(link => 
+          `<a href="${link.url}" class="club-link" title="${link.type}">
+            <i class="${link.icon}"></i>
+          </a>`
+        ).join('') : '';
+
+        clubsHTML += `
+          <div class="club-card" data-club="${club.name.toLowerCase().replace(/\s+/g, '-')}">
+            <div class="club-card-inner">
+              <div class="club-icon">
+                <i class="${club.icon}"></i>
+              </div>
+              <h3 class="club-name">${club.name}</h3>
+              <p class="club-description">${club.description}</p>
+              <div class="club-links">
+                ${socialLinksHTML}
+              </div>
+            </div>
+            <div class="club-card-glow"></div>
+          </div>
+        `;
+      }
+    }
+    
+    clubsGrid.innerHTML = clubsHTML;
+  } catch (error) {
+    console.error('Error loading clubs content:', error);
+  }
+}

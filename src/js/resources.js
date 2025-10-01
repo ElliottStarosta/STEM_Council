@@ -3,6 +3,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Initialize resources animations when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
+  loadResourcesContent();
   initResourcesAnimations();
   initCategoryTabs();
   initResourcesParticles();
@@ -559,4 +560,79 @@ document.addEventListener("keydown", function(event) {
 if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
   gsap.globalTimeline.timeScale(0.5);
   ScrollTrigger.config({ limitCallbacks: true });
+}
+
+// Load resources content from markdown files
+async function loadResourcesContent() {
+  try {
+    // Load resources settings
+    const settingsData = await ContentLoader.fetchJSON('/src/content/resources-settings.json');
+    if (settingsData) {
+      const subtitleElement = document.querySelector('.resources-subtitle');
+      if (subtitleElement) {
+        subtitleElement.textContent = settingsData.subtitle;
+      }
+
+      const ctaTitleElement = document.querySelector('.cta-title');
+      if (ctaTitleElement) {
+        ctaTitleElement.textContent = settingsData.ctaTitle;
+      }
+
+      const ctaDescElement = document.querySelector('.cta-description');
+      if (ctaDescElement) {
+        ctaDescElement.textContent = settingsData.ctaDescription;
+      }
+
+      const ctaBtnElement = document.querySelector('.cta-btn');
+      if (ctaBtnElement) {
+        ctaBtnElement.textContent = settingsData.ctaButtonText;
+      }
+    }
+
+    // Load resources from markdown files
+    const resourceFiles = [
+      '3blue1brown-mathematics.md',
+      'cs50-introduction-computer-science.md',
+      'desmos-graphing-calculator.md',
+      'waterloo-math-contests.md'
+    ];
+
+    const resourcesGrid = document.querySelector('.resources-grid');
+    if (!resourcesGrid) return;
+
+    let resourcesHTML = '';
+    
+    for (const file of resourceFiles) {
+      const content = await ContentLoader.fetchMarkdown(`/src/content/resources/${file}`);
+      
+      if (content && content.frontmatter) {
+        const resource = content.frontmatter;
+        const tagsHTML = resource.tags ? resource.tags.map(tag => 
+          `<span class="tag">${tag.tag}</span>`
+        ).join('') : '';
+
+        resourcesHTML += `
+          <div class="resource-card" data-type="${resource.type}">
+            <div class="card-icon">
+              <i class="${resource.icon}"></i>
+            </div>
+            <div class="card-content">
+              <h3 class="card-title">${resource.title}</h3>
+              <p class="card-description">${resource.description}</p>
+              <div class="card-tags">
+                ${tagsHTML}
+              </div>
+            </div>
+            <div class="card-action">
+              <button class="resource-btn" onclick="window.open('${resource.url}', '_blank')">Visit Now</button>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    resourcesGrid.innerHTML = resourcesHTML;
+  } catch (error) {
+    console.error('Error loading resources content:', error);
+  }
 }

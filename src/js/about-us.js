@@ -2,6 +2,9 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Register ScrollTrigger plugin
   gsap.registerPlugin(ScrollTrigger);
+  
+  // Load about content
+  loadAboutContent();
 
   // ==========================================
   // Mission Section Animations
@@ -783,3 +786,70 @@ document.addEventListener("DOMContentLoaded", function () {
 
   console.log("About Us animations initialized successfully");
 });
+
+// Load about content from JSON
+async function loadAboutContent() {
+  try {
+    const aboutData = await ContentLoader.fetchJSON('/src/content/about.json');
+    if (!aboutData) {
+      console.warn('Failed to load about content, using default values');
+      return;
+    }
+
+    // Update mission statement
+    const missionStatement = document.querySelector('.mission-statement');
+    if (missionStatement) {
+      missionStatement.innerHTML = `
+        <span class="mission-highlight">Empowering</span> our fellow
+        <span class="mission-highlight lion-highlight">Lions</span> with
+        <span class="mission-highlight">STEM opportunities</span>
+      `;
+    }
+
+    // Update what we do section
+    const whatWeDoDesc = document.querySelector('.about-left .section-description');
+    if (whatWeDoDesc) {
+      whatWeDoDesc.textContent = aboutData.whatWeDo;
+    }
+
+    // Update our impact section
+    const ourImpactDesc = document.querySelector('.about-right .section-description');
+    if (ourImpactDesc) {
+      ourImpactDesc.textContent = aboutData.ourImpact;
+    }
+
+    // Update features
+    const featureItems = document.querySelectorAll('.feature-item');
+    if (aboutData.features && aboutData.features.length >= 3) {
+      aboutData.features.forEach((feature, index) => {
+        if (featureItems[index]) {
+          const titleElement = featureItems[index].querySelector('h4');
+          const descElement = featureItems[index].querySelector('p');
+          const iconElement = featureItems[index].querySelector('.feature-icon i');
+          
+          if (titleElement) titleElement.textContent = feature.title;
+          if (descElement) descElement.textContent = feature.description;
+          if (iconElement) iconElement.className = feature.icon;
+        }
+      });
+    }
+
+    // Update impact stats
+    const statItems = document.querySelectorAll('.stat-item');
+    if (aboutData.impactStats && aboutData.impactStats.length >= 4) {
+      aboutData.impactStats.forEach((stat, index) => {
+        if (statItems[index]) {
+          const numberElement = statItems[index].querySelector('.stat-number');
+          const labelElement = statItems[index].querySelector('.stat-label');
+          const descElement = statItems[index].querySelector('.stat-desc');
+          
+          if (numberElement) numberElement.textContent = stat.number;
+          if (labelElement) labelElement.textContent = stat.label;
+          if (descElement) descElement.textContent = stat.description;
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error loading about content:', error);
+  }
+}
