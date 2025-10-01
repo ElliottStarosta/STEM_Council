@@ -938,6 +938,12 @@
   <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollToPlugin.min.js"></script>
 
   <script src="src/js/content-loader.js"></script>
+  <script>
+    // Ensure ContentLoader is available globally before modules load
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('ContentLoader available:', typeof ContentLoader !== 'undefined');
+    });
+  </script>
   <script type="module" src="src/js/header.js"></script>
   <script type="module" src="src/js/scrolling.js"></script>
   <script type="module" src="src/js/hero.js"></script>

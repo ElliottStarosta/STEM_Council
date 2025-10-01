@@ -9,12 +9,13 @@
 <body>
   <script>
     // Initialize Decap CMS
+    window.CMS_MANUAL_INIT = true;
     CMS.init({
       config: {
         load_config_file: false,
         backend: {
           name: 'git-gateway',
-          branch: 'main',
+          branch: 'admin',
         },
         media_folder: 'src/images/uploads',
         public_folder: '/src/images/uploads',

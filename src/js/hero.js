@@ -13,7 +13,17 @@ document.addEventListener("DOMContentLoaded", function () {
 // Load hero content from JSON
 async function loadHeroContent() {
   try {
+    console.log('Loading hero content...');
+    
+    // Check if ContentLoader is available
+    if (typeof ContentLoader === 'undefined') {
+      console.error('ContentLoader is not available');
+      return;
+    }
+    
     const heroData = await ContentLoader.fetchJSON('/src/content/hero.json');
+    console.log('Hero data loaded:', heroData);
+    
     if (!heroData) {
       console.warn('Failed to load hero content, using default values');
       return;
