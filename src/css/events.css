@@ -447,7 +447,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
+  z-index: 9000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -471,6 +471,7 @@
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(15px);
   cursor: pointer;
+  z-index: 1;
 }
 
 .modal-content {
@@ -479,12 +480,15 @@
   max-width: 800px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
+  z-index: 2;
   transform: scale(0.9) translateY(20px);
   transition: transform 0.3s ease;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
 }
 
 .event-modal.active .modal-content {
@@ -519,6 +523,7 @@
 
 .modal-header {
   padding: var(--spacing-2xl) var(--spacing-2xl) var(--spacing-base);
+  flex-shrink: 0;
   background: linear-gradient(135deg, rgba(211, 229, 133, 0.1), rgba(66, 166, 76, 0.1));
 }
 
@@ -546,10 +551,13 @@
 
 .modal-body {
   padding: 0 var(--spacing-2xl) var(--spacing-2xl);
+  overflow-y: auto;
+  flex: 1;
 }
 
 .modal-carousel {
   margin-bottom: var(--spacing-2xl);
+  margin-top: var(--spacing-base);
 }
 
 .carousel-container {
@@ -1123,6 +1131,27 @@
     transform: scale(1);
   }
 }
+
+
+/* Custom scrollbar for modal body */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--primary-green);
+  border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dark-green);
+}
+
 
 /* Focus states for accessibility */
 .event-card:focus,

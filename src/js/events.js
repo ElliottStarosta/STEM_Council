@@ -241,67 +241,92 @@ class EventsManager {
   }
 
   // Open modal with event details
-  openModal(eventId) {
-    const event = eventsData.find((e) => e.id === eventId);
-    if (!event) return;
+openModal(eventId) {
+  const event = eventsData.find((e) => e.id === eventId);
+  if (!event) return;
 
-    const modal = document.getElementById("eventModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalDate = document.getElementById("modalDate");
-    const modalDescription = document.getElementById("modalDescription");
+  const modal = document.getElementById("eventModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalDate = document.getElementById("modalDate");
+  const modalDescription = document.getElementById("modalDescription");
 
-    if (!modal || !modalTitle || !modalDate || !modalDescription) return;
+  if (!modal || !modalTitle || !modalDate || !modalDescription) return;
 
-    // Populate modal content
-    modalTitle.textContent = event.name;
-    modalDate.textContent = this.formatDate(event.startDate, event.endDate);
-    modalDescription.innerHTML = event.description
-      .split("\n")
-      .map((p) => `<p>${p}</p>`)
-      .join("");
+  // Populate modal content
+  modalTitle.textContent = event.name;
+  modalDate.textContent = this.formatDate(event.startDate, event.endDate);
+  modalDescription.innerHTML = event.description
+    .split("\n")
+    .map((p) => `<p>${p}</p>`)
+    .join("");
 
-    // Setup carousel
-    this.currentEventImages = event.images;
-    this.currentSlide = 0;
-    this.renderCarousel();
+  // Setup carousel
+  this.currentEventImages = event.images;
+  this.currentSlide = 0;
+  this.renderCarousel();
 
-    // Show modal
-    modal.classList.add("active");
-    document.body.style.overflow = "hidden";
-
-    // GSAP animation
-    if (typeof gsap !== "undefined") {
-      gsap.fromTo(
-        ".modal-content",
-        { scale: 0.8, opacity: 0, y: 50 },
-        { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" }
-      );
-    }
+  // Hide header when modal opens
+  const header = document.querySelector(".header");
+  if (header && typeof gsap !== "undefined") {
+    gsap.to(header, {
+      duration: 0.4,
+      y: -120,
+      ease: "power3.out",
+    });
   }
 
-  // Close modal
-  closeModal() {
-    const modal = document.getElementById("eventModal");
-    if (!modal) return;
+  // Show modal
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
 
-    if (typeof gsap !== "undefined") {
-      gsap.to(".modal-content", {
-        scale: 0.8,
-        opacity: 0,
-        y: 50,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => {
-          modal.classList.remove("active");
-          document.body.style.overflow = "";
-        },
-      });
-    } else {
-      modal.classList.remove("active");
-      document.body.style.overflow = "";
+  // GSAP animation
+  if (typeof gsap !== "undefined") {
+    gsap.fromTo(
+      ".modal-content",
+      { scale: 0.8, opacity: 0, y: 50 },
+      { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" }
+    );
+  }
+}
+
+// Close modal
+closeModal() {
+  const modal = document.getElementById("eventModal");
+  if (!modal) return;
+
+  if (typeof gsap !== "undefined") {
+    gsap.to(".modal-content", {
+      scale: 0.8,
+      opacity: 0,
+      y: 50,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        modal.classList.remove("active");
+        document.body.style.overflow = "";
+        
+        // Show header when modal closes
+        const header = document.querySelector(".header");
+        if (header) {
+          gsap.to(header, {
+            duration: 0.5,
+            y: 0,
+            ease: "back.out(1.2)",
+          });
+        }
+      },
+    });
+  } else {
+    modal.classList.remove("active");
+    document.body.style.overflow = "";
+    
+    // Show header when modal closes (fallback without GSAP)
+    const header = document.querySelector(".header");
+    if (header) {
+      header.style.transform = "translateY(0)";
     }
   }
-
+}
   // Render carousel
   renderCarousel() {
     const carouselSlides = document.getElementById("carouselSlides");
