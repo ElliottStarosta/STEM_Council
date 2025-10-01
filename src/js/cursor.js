@@ -5,6 +5,9 @@ let mouseX = 0;
 let mouseY = 0;
 let cursorX = 0;
 let cursorY = 0;
+let hasMovedMouse = false;
+cursor.style.opacity = "0";
+
 let trailPositions = [];
 
 // Check if device supports hover (desktop) vs touch-only (mobile)
@@ -270,6 +273,18 @@ function adjustCursorColor(x, y) {
 // Mouse movement with throttling
 let isThrottled = false;
 document.addEventListener("mousemove", (e) => {
+
+  // Show cursor on first mouse movement
+  if (!hasMovedMouse) {
+    hasMovedMouse = true;
+    cursor.style.opacity = "1";
+    // Initialize cursor position to current mouse position
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    cursorX = e.clientX;
+    cursorY = e.clientY;
+  }
+  
   mouseX = e.clientX;
   mouseY = e.clientY;
   
