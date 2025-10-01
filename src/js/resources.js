@@ -565,6 +565,12 @@ if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 // Load resources content from markdown files
 async function loadResourcesContent() {
   try {
+    // Check if ContentLoader is available
+    if (typeof ContentLoader === 'undefined') {
+      console.error('ContentLoader is not available for resources content');
+      return;
+    }
+    
     // Load resources settings
     const settingsData = await ContentLoader.fetchJSON('/src/content/resources-settings.json');
     if (settingsData) {

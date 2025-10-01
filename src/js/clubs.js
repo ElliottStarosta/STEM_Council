@@ -283,6 +283,12 @@ window.addEventListener('load', () => {
 // Load clubs content from markdown files
 async function loadClubsContent() {
   try {
+    // Check if ContentLoader is available
+    if (typeof ContentLoader === 'undefined') {
+      console.error('ContentLoader is not available for clubs content');
+      return;
+    }
+    
     // List of club files
     const clubFiles = [
       'computer-science-club.md',

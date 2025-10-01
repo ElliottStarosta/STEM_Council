@@ -26,6 +26,12 @@ class EventsManager {
   // Load events from markdown files
   async loadEvents() {
     try {
+      // Check if ContentLoader is available
+      if (typeof ContentLoader === 'undefined') {
+        console.error('ContentLoader is not available for events content');
+        return;
+      }
+      
       // List of event files (in a real implementation, this would be fetched from an API)
       const eventFiles = [
         '2025-07-15-summer-tech-conference-2025.md',

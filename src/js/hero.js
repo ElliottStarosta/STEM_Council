@@ -17,8 +17,13 @@ async function loadHeroContent() {
     
     // Check if ContentLoader is available
     if (typeof ContentLoader === 'undefined') {
-      console.error('ContentLoader is not available');
-      return;
+      console.error('ContentLoader is not available - waiting for it to load...');
+      // Wait a bit and try again
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (typeof ContentLoader === 'undefined') {
+        console.error('ContentLoader still not available after waiting');
+        return;
+      }
     }
     
     const heroData = await ContentLoader.fetchJSON('/src/content/hero.json');

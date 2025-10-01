@@ -942,18 +942,41 @@
     // Ensure ContentLoader is available globally before modules load
     window.addEventListener('DOMContentLoaded', () => {
       console.log('ContentLoader available:', typeof ContentLoader !== 'undefined');
+      
+      // Load all modules after ContentLoader is confirmed available
+      if (typeof ContentLoader !== 'undefined') {
+        // Test ContentLoader functionality
+        if (typeof testContentLoader === 'function') {
+          testContentLoader().then(result => {
+            console.log('ContentLoader test completed:', result);
+          });
+        }
+        
+        // Dynamically load modules to ensure proper order
+        const modules = [
+          'src/js/header.js',
+          'src/js/scrolling.js', 
+          'src/js/hero.js',
+          'src/js/about-us.js',
+          'src/js/clubs.js',
+          'src/js/events.js',
+          'src/js/footer.js',
+          'src/js/cursor.js',
+          'src/js/resources.js',
+          'src/js/contact.js'
+        ];
+        
+        modules.forEach(module => {
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = module;
+          document.head.appendChild(script);
+        });
+      } else {
+        console.error('ContentLoader failed to load');
+      }
     });
   </script>
-  <script type="module" src="src/js/header.js"></script>
-  <script type="module" src="src/js/scrolling.js"></script>
-  <script type="module" src="src/js/hero.js"></script>
-  <script type="module" src="src/js/about-us.js"></script>
-  <script type="module" src="src/js/clubs.js"></script>
-  <script type="module" src="src/js/events.js"></script>
-  <script type="module" src="src/js/footer.js"></script>
-  <script type="module" src="src/js/cursor.js"></script>
-  <script type="module" src="src/js/resources.js"></script>
-  <script type="module" src="src/js/contact.js"></script>
 
   <!-- Netlify Identity Widget -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>

@@ -790,6 +790,12 @@ document.addEventListener("DOMContentLoaded", function () {
 // Load about content from JSON
 async function loadAboutContent() {
   try {
+    // Check if ContentLoader is available
+    if (typeof ContentLoader === 'undefined') {
+      console.error('ContentLoader is not available for about content');
+      return;
+    }
+    
     const aboutData = await ContentLoader.fetchJSON('/src/content/about.json');
     if (!aboutData) {
       console.warn('Failed to load about content, using default values');

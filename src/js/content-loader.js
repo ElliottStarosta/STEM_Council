@@ -200,3 +200,25 @@ window.ContentLoader = {
   formatDate,
   getPreviewText
 };
+
+// Log successful loading
+console.log('ContentLoader module loaded successfully');
+
+// Test function to verify ContentLoader is working
+window.testContentLoader = async function() {
+  console.log('Testing ContentLoader...');
+  try {
+    // Test JSON loading
+    const heroData = await fetchJSON('/src/content/hero.json');
+    console.log('JSON test result:', heroData ? 'SUCCESS' : 'FAILED');
+    
+    // Test markdown loading
+    const clubData = await fetchMarkdown('/src/content/clubs/computer-science-club.md');
+    console.log('Markdown test result:', clubData ? 'SUCCESS' : 'FAILED');
+    
+    return { json: !!heroData, markdown: !!clubData };
+  } catch (error) {
+    console.error('ContentLoader test failed:', error);
+    return { json: false, markdown: false, error: error.message };
+  }
+};

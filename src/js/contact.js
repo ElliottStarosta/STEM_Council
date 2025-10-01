@@ -169,6 +169,12 @@ document.addEventListener("DOMContentLoaded", function () {
 // Load contact content from JSON
 async function loadContactContent() {
   try {
+    // Check if ContentLoader is available
+    if (typeof ContentLoader === 'undefined') {
+      console.error('ContentLoader is not available for contact content');
+      return;
+    }
+    
     const contactData = await ContentLoader.fetchJSON('/src/content/contact.json');
     if (!contactData) {
       console.warn('Failed to load contact content, using default values');
