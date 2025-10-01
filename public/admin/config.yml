@@ -1,0 +1,275 @@
+backend:
+  name: git-gateway
+  branch: admin
+
+media_folder: src/images/uploads
+public_folder: /src/images/uploads
+
+collections:
+  - name: hero
+    label: Hero Section
+    files:
+      - file: src/content/hero.json
+        label: Hero Content
+        name: hero
+        fields:
+          - label: Description
+            name: description
+            widget: text
+            required: true
+          - label: Adjectives
+            name: adjectives
+            widget: list
+            fields:
+              - label: Adjective
+                name: adjective
+                widget: string
+                required: true
+            min: 3
+            max: 3
+          - label: Stats
+            name: stats
+            widget: list
+            fields:
+              - label: Number
+                name: number
+                widget: string
+                required: true
+                pattern: ['^\\d+\\+?$', 'Must contain numbers and optional +']
+              - label: Label
+                name: label
+                widget: string
+                required: true
+            min: 3
+            max: 3
+
+  - name: about
+    label: About Us
+    files:
+      - file: src/content/about.json
+        label: About Content
+        name: about
+        fields:
+          - label: Mission Statement
+            name: missionStatement
+            widget: text
+            required: true
+          - label: What We Do
+            name: whatWeDo
+            widget: markdown
+            required: true
+          - label: Our Impact
+            name: ourImpact
+            widget: markdown
+            required: true
+          - label: Features
+            name: features
+            widget: list
+            fields:
+              - label: Title
+                name: title
+                widget: string
+                required: true
+              - label: Description
+                name: description
+                widget: text
+                required: true
+              - label: Icon
+                name: icon
+                widget: string
+                required: true
+                pattern: ['^ri-.*$', 'Must be a valid Remix Icon class (e.g., ri-focus-2-line)']
+            min: 3
+            max: 3
+          - label: Impact Stats
+            name: impactStats
+            widget: list
+            fields:
+              - label: Number
+                name: number
+                widget: string
+                required: true
+                pattern: ['^\\d+\\+?$', 'Must contain numbers and optional +']
+              - label: Label
+                name: label
+                widget: string
+                required: true
+              - label: Description
+                name: description
+                widget: text
+                required: true
+            min: 4
+            max: 4
+
+  - name: contact
+    label: Contact
+    files:
+      - file: src/content/contact.json
+        label: Contact Content
+        name: contact
+        fields:
+          - label: Subtitle
+            name: subtitle
+            widget: text
+            required: true
+          - label: Contact Methods
+            name: contactMethods
+            widget: list
+            fields:
+              - label: Type
+                name: type
+                widget: string
+                required: true
+              - label: Value
+                name: value
+                widget: string
+                required: true
+              - label: Link
+                name: link
+                widget: string
+                required: true
+                pattern: ['^https?://.*', 'Must be a valid URL']
+              - label: Icon
+                name: icon
+                widget: string
+                required: true
+                pattern: ['^ri-.*$', 'Must be a valid Remix Icon class']
+            min: 3
+            max: 3
+
+  - name: resources-settings
+    label: Resources Settings
+    files:
+      - file: src/content/resources-settings.json
+        label: Resources Settings
+        name: resources-settings
+        fields:
+          - label: Subtitle
+            name: subtitle
+            widget: text
+            required: true
+          - label: CTA Title
+            name: ctaTitle
+            widget: string
+            required: true
+          - label: CTA Description
+            name: ctaDescription
+            widget: text
+            required: true
+          - label: CTA Button Text
+            name: ctaButtonText
+            widget: string
+            required: true
+
+  - name: clubs
+    label: Clubs
+    folder: src/content/clubs/
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - label: Name
+        name: name
+        widget: string
+        required: true
+      - label: Description
+        name: description
+        widget: text
+        required: true
+      - label: Icon
+        name: icon
+        widget: string
+        required: true
+        pattern: ['^ri-.*$', 'Must be a valid Remix Icon class']
+      - label: Social Links
+        name: socialLinks
+        widget: list
+        fields:
+          - label: Type
+            name: type
+            widget: string
+            required: true
+          - label: URL
+            name: url
+            widget: string
+            required: true
+            pattern: ['^https?://.*', 'Must be a valid URL']
+          - label: Icon
+            name: icon
+            widget: string
+            required: true
+            pattern: ['^ri-.*$', 'Must be a valid Remix Icon class']
+        min: 1
+        max: 3
+
+  - name: events
+    label: Events
+    folder: src/content/events/
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - label: Name
+        name: name
+        widget: string
+        required: true
+      - label: Start Date
+        name: startDate
+        widget: datetime
+        required: true
+      - label: End Date
+        name: endDate
+        widget: datetime
+        required: true
+      - label: Images
+        name: images
+        widget: list
+        fields:
+          - label: Image
+            name: image
+            widget: image
+            required: true
+        min: 1
+        max: 5
+      - label: Description
+        name: body
+        widget: markdown
+        required: true
+
+  - name: resources
+    label: Resources
+    folder: src/content/resources/
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        required: true
+      - label: Description
+        name: description
+        widget: text
+        required: true
+      - label: URL
+        name: url
+        widget: string
+        required: true
+        pattern: ['^https?://.*', 'Must be a valid URL']
+      - label: Type
+        name: type
+        widget: select
+        options: [videos, courses, tools, competitions]
+        required: true
+      - label: Tags
+        name: tags
+        widget: list
+        fields:
+          - label: Tag
+            name: tag
+            widget: string
+            required: true
+        min: 1
+        max: 5
+      - label: Icon
+        name: icon
+        widget: string
+        required: true
+        pattern: ['^ri-.*$', 'Must be a valid Remix Icon class']
