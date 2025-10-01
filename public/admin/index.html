@@ -8,6 +8,49 @@
   <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </head>
 <body>
+  <div id="nc-root"></div>
   <!-- Decap CMS will auto load config.yml -->
+  <script>
+    // Global error handler for debugging
+    window.addEventListener('error', function(e) {
+      console.error('Global error caught:', e.error);
+      console.error('Error details:', {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        stack: e.error ? e.error.stack : 'No stack trace'
+      });
+    });
+
+    // Ensure DOM is ready before initializing CMS
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, CMS should initialize now');
+      
+      // Check if the root element exists
+      const rootElement = document.getElementById('nc-root');
+      if (rootElement) {
+        console.log('Root element found:', rootElement);
+      } else {
+        console.error('Root element not found!');
+      }
+      
+      // Check if Decap CMS is loaded
+      if (typeof CMS !== 'undefined') {
+        console.log('Decap CMS loaded successfully');
+      } else {
+        console.error('Decap CMS not loaded');
+      }
+    });
+    
+    // Fallback for older browsers
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM ready via fallback');
+      });
+    } else {
+      console.log('DOM already ready');
+    }
+  </script>
 </body>
 </html>
