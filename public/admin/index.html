@@ -9,17 +9,20 @@
 </head>
 <body>
   <script>
-    // Initialize Decap CMS
-    window.CMS_MANUAL_INIT = true;
-    CMS.init({
-      config: {
-        load_config_file: false,
-        backend: {
-          name: 'git-gateway',
-          branch: 'admin',
-        },
-        media_folder: 'src/images/uploads',
-        public_folder: '/src/images/uploads',
+    // Wait for CMS to load before initializing
+    function initCMS() {
+      if (typeof CMS !== 'undefined') {
+        // Initialize Decap CMS
+        window.CMS_MANUAL_INIT = true;
+        CMS.init({
+        config: {
+          load_config_file: false,
+          backend: {
+            name: 'git-gateway',
+            branch: 'admin',
+          },
+          media_folder: 'src/images/uploads',
+          public_folder: '/src/images/uploads',
         collections: [
           {
             name: 'hero',
@@ -420,6 +423,14 @@
         ]
       }
     });
+      } else {
+        // Retry after a short delay if CMS is not loaded yet
+        setTimeout(initCMS, 100);
+      }
+    }
+    
+    // Start initialization when DOM is ready
+    document.addEventListener('DOMContentLoaded', initCMS);
   </script>
 </body>
 </html>
