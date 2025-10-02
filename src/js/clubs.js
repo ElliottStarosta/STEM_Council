@@ -1,9 +1,15 @@
 
 // Clubs Section JavaScript
-document.addEventListener('DOMContentLoaded', function() {
+function initClubs() {
   loadClubsContent();
   initClubsSection();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initClubs);
+} else {
+  initClubs();
+}
 
 function initClubsSection() {
   createClubsParticles();
@@ -280,34 +286,48 @@ window.addEventListener('load', () => {
   initParallaxEffect();
 });
 
-// Load clubs content from markdown files
+// Load clubs content from markdown files dynamically
 async function loadClubsContent() {
   try {
-    // Check if ContentLoader is available
-    if (typeof ContentLoader === 'undefined') {
-      console.error('ContentLoader is not available for clubs content');
-      return;
-    }
-    
-    // List of club files
-    const clubFiles = [
-      'computer-science-club.md',
-      'arduino-club.md'
-    ];
+    // Use Vite's import.meta.glob to dynamically discover all markdown files
+    const clubModules = import.meta.glob('/src/content/clubs/*.md', { 
+      query: '?raw',
+      import: 'default',
+      eager: true 
+    });
 
     const clubsGrid = document.querySelector('.clubs-grid');
     if (!clubsGrid) return;
 
     let clubsHTML = '';
     
-    for (let i = 0; i < clubFiles.length; i++) {
-      const file = clubFiles[i];
-      const content = await ContentLoader.fetchMarkdown(`/src/content/clubs/${file}`);
+    for (const [path, rawContent] of Object.entries(clubModules)) {
+      const content = ContentLoader.parseMarkdownFrontmatter(rawContent);
       
       if (content && content.frontmatter) {
+        console.log('Raw club frontmatter:', content.frontmatter);
+        
         const club = content.frontmatter;
-        const socialLinksHTML = club.socialLinks ? club.socialLinks.map(link => 
-          `<a href="${link.url}" class="club-link" title="${link.type}">
+        
+        // Process socialLinks
+        let socialLinks = [];
+        if (club.socialLinks && Array.isArray(club.socialLinks)) {
+          socialLinks = club.socialLinks.map(link => {
+            if (typeof link === 'object' && link !== null) {
+              return {
+                type: link.type || 'Link',
+                url: link.url || '#',
+                icon: link.icon || 'ri-link'
+              };
+            }
+            return null;
+          }).filter(link => link !== null);
+        }
+        
+        console.log('Processed social links:', socialLinks);
+        
+        const socialLinksHTML = socialLinks.length > 0 ? socialLinks.map(link => 
+          `<a href="${link.url}" class="club-link" title="${link.type}" target="_blank" rel="noopener noreferrer">
             <i class="${link.icon}"></i>
           </a>`
         ).join('') : '';
@@ -316,7 +336,7 @@ async function loadClubsContent() {
           <div class="club-card" data-club="${club.name.toLowerCase().replace(/\s+/g, '-')}">
             <div class="club-card-inner">
               <div class="club-icon">
-                <i class="${club.icon}"></i>
+                <i class="${club.icon || 'ri-star-line'}"></i>
               </div>
               <h3 class="club-name">${club.name}</h3>
               <p class="club-description">${club.description}</p>
@@ -331,6 +351,19 @@ async function loadClubsContent() {
     }
     
     clubsGrid.innerHTML = clubsHTML;
+
+    if (typeof gsap !== 'undefined') {
+      gsap.fromTo(
+        '.club-card',
+        { opacity: 0, y: 40, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.08 }
+      );
+    }
+
+    initClubInteractions();
+    if (typeof ScrollTrigger !== 'undefined') {
+      ScrollTrigger.refresh();
+    }
   } catch (error) {
     console.error('Error loading clubs content:', error);
   }

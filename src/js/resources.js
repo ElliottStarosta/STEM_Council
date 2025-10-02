@@ -1,14 +1,20 @@
 // Register ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
-// Initialize resources animations when DOM is loaded
-document.addEventListener("DOMContentLoaded", function () {
+// Initialize resources animations (also runs immediately if DOM already loaded)
+function initResources() {
   loadResourcesContent();
   initResourcesAnimations();
   initCategoryTabs();
   initResourcesParticles();
   initResourcesInteractions();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initResources);
+} else {
+  initResources();
+}
 
 // Main resources animation function
 function initResourcesAnimations() {
@@ -562,54 +568,40 @@ if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
   ScrollTrigger.config({ limitCallbacks: true });
 }
 
-// Load resources content from markdown files
+// Load resources content from markdown files dynamically
 async function loadResourcesContent() {
   try {
-    // Check if ContentLoader is available
-    if (typeof ContentLoader === 'undefined') {
-      console.error('ContentLoader is not available for resources content');
-      return;
-    }
-    
     // Load resources settings
-    const settingsData = await ContentLoader.fetchJSON('/src/content/resources-settings.json');
-    if (settingsData) {
+    const settingsResponse = await fetch('/src/content/resources-settings.json');
+    if (settingsResponse.ok) {
+      const settingsData = await settingsResponse.json();
       const subtitleElement = document.querySelector('.resources-subtitle');
-      if (subtitleElement) {
-        subtitleElement.textContent = settingsData.subtitle;
-      }
+      if (subtitleElement) subtitleElement.textContent = settingsData.subtitle;
 
       const ctaTitleElement = document.querySelector('.cta-title');
-      if (ctaTitleElement) {
-        ctaTitleElement.textContent = settingsData.ctaTitle;
-      }
+      if (ctaTitleElement) ctaTitleElement.textContent = settingsData.ctaTitle;
 
       const ctaDescElement = document.querySelector('.cta-description');
-      if (ctaDescElement) {
-        ctaDescElement.textContent = settingsData.ctaDescription;
-      }
+      if (ctaDescElement) ctaDescElement.textContent = settingsData.ctaDescription;
 
       const ctaBtnElement = document.querySelector('.cta-btn');
-      if (ctaBtnElement) {
-        ctaBtnElement.textContent = settingsData.ctaButtonText;
-      }
+      if (ctaBtnElement) ctaBtnElement.textContent = settingsData.ctaButtonText;
     }
 
-    // Load resources from markdown files
-    const resourceFiles = [
-      '3blue1brown-mathematics.md',
-      'cs50-introduction-computer-science.md',
-      'desmos-graphing-calculator.md',
-      'waterloo-math-contests.md'
-    ];
+    // Use Vite's import.meta.glob to dynamically discover all markdown files
+    const resourceModules = import.meta.glob('/src/content/resources/*.md', { 
+      query: '?raw',
+      import: 'default',
+      eager: true 
+    });
 
     const resourcesGrid = document.querySelector('.resources-grid');
     if (!resourcesGrid) return;
 
     let resourcesHTML = '';
     
-    for (const file of resourceFiles) {
-      const content = await ContentLoader.fetchMarkdown(`/src/content/resources/${file}`);
+    for (const [path, rawContent] of Object.entries(resourceModules)) {
+      const content = ContentLoader.parseMarkdownFrontmatter(rawContent);
       
       if (content && content.frontmatter) {
         const resource = content.frontmatter;
@@ -638,6 +630,20 @@ async function loadResourcesContent() {
     }
     
     resourcesGrid.innerHTML = resourcesHTML;
+
+    if (typeof gsap !== 'undefined') {
+      gsap.fromTo(
+        '.resource-card',
+        { opacity: 0, y: 40, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.06 }
+      );
+    }
+
+    initResourcesInteractions();
+    initCategoryTabs();
+    if (typeof ScrollTrigger !== 'undefined') {
+      ScrollTrigger.refresh();
+    }
   } catch (error) {
     console.error('Error loading resources content:', error);
   }

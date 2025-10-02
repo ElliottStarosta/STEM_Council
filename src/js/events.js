@@ -26,43 +26,79 @@ class EventsManager {
   // Load events from markdown files
   async loadEvents() {
     try {
-      // Check if ContentLoader is available
-      if (typeof ContentLoader === 'undefined') {
-        console.error('ContentLoader is not available for events content');
-        return;
-      }
-      
-      // List of event files (in a real implementation, this would be fetched from an API)
-      const eventFiles = [
-        '2025-07-15-summer-tech-conference-2025.md',
-        '2025-08-05-green-innovation-workshop.md',
-        '2025-08-20-digital-marketing-masterclass.md',
-        '2025-09-10-ai-machine-learning-summit.md',
-        '2025-10-01-startup-pitch-competition.md',
-        '2025-10-25-cybersecurity-best-practices.md'
-      ];
+      // Use Vite's import.meta.glob to automatically discover all markdown files
+      const eventModules = import.meta.glob('/src/content/events/*.md', {
+        query: '?raw',
+        import: 'default',
+        eager: true
+      });
 
       const loadedEvents = [];
-      
-      for (let i = 0; i < eventFiles.length; i++) {
-        const file = eventFiles[i];
-        const content = await ContentLoader.fetchMarkdown(`/src/content/events/${file}`);
-        
-        if (content && content.frontmatter) {
-          const event = {
-            id: i + 1,
-            name: content.frontmatter.name,
-            startDate: content.frontmatter.startDate,
-            endDate: content.frontmatter.endDate,
-            description: content.body,
-            images: content.frontmatter.images ? content.frontmatter.images.map(img => img.image) : []
-          };
-          loadedEvents.push(event);
+      let eventId = 1;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
+      // Process each discovered markdown file
+      for (const [path, rawContent] of Object.entries(eventModules)) {
+        try {
+          // Parse the markdown content
+          const content = ContentLoader.parseMarkdownFrontmatter(rawContent);
+
+          if (content && content.frontmatter) {
+            console.log(`Processing event from: ${path}`);
+            console.log('Raw frontmatter images:', content.frontmatter.images);
+
+            // Check if event has already passed
+            const eventEndDate = new Date(content.frontmatter.endDate);
+            eventEndDate.setHours(23, 59, 59, 999); // Set to end of day
+
+            if (eventEndDate < today) {
+              console.log(`Skipping past event: ${content.frontmatter.name}`);
+              continue; // Skip this event if it's in the past
+            }
+
+            // Handle both nested objects and simple strings
+            let imagesFromFrontmatter = [];
+            if (content.frontmatter.images && Array.isArray(content.frontmatter.images)) {
+              imagesFromFrontmatter = content.frontmatter.images.map(img => {
+                // If img is an object with an 'image' property, extract it
+                if (typeof img === 'object' && img !== null && img.image) {
+                  return img.image;
+                }
+                // Otherwise, assume it's already a string path
+                return img;
+              }).filter(img => img); // Remove any null/undefined values
+            }
+
+            console.log('Processed images:', imagesFromFrontmatter);
+
+            const normalizedImages = (imagesFromFrontmatter.length > 0)
+              ? imagesFromFrontmatter
+              : ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'];
+
+            console.log('Final normalized images:', normalizedImages);
+
+            const event = {
+              id: eventId++,
+              name: content.frontmatter.name,
+              startDate: content.frontmatter.startDate,
+              endDate: content.frontmatter.endDate,
+              description: content.body,
+              images: normalizedImages,
+              filename: path.split('/').pop()
+            };
+            loadedEvents.push(event);
+          }
+        } catch (fileError) {
+          console.error(`Error processing event file ${path}:`, fileError);
         }
       }
-      
+
+      // Sort events by start date (closest first - ascending order)
+      loadedEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
       eventsData = loadedEvents;
-      console.log('Loaded events:', eventsData);
+      console.log(`Loaded ${eventsData.length} upcoming events dynamically:`, eventsData);
     } catch (error) {
       console.error('Error loading events:', error);
       // Fallback to empty array
@@ -70,8 +106,12 @@ class EventsManager {
     }
   }
 
-  // Resolve image path - handles both URLs and local paths
+  // Resolve image path - handles both URLs and local paths with fallback
   resolveImagePath(imagePath) {
+    const fallback = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop';
+    if (!imagePath || typeof imagePath !== 'string') {
+      return fallback;
+    }
     // If it's already a full URL, return as is
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
       return imagePath;
@@ -146,9 +186,8 @@ class EventsManager {
       .map(
         (event) => `
       <div class="event-card" data-event-id="${event.id}">
-        <img src="${this.resolveImagePath(event.images[0])}" alt="${
-          event.name
-        }" class="event-image" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
+        <img src="${this.resolveImagePath((event.images && event.images[0]) || '')}" alt="${event.name
+          }" class="event-image" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
         <div class="event-content">
           <div class="event-date">${this.formatDate(
             event.startDate,
@@ -212,96 +251,117 @@ class EventsManager {
   }
 
   // Open modal with event details
-openModal(eventId) {
-  const event = eventsData.find((e) => e.id === eventId);
-  if (!event) return;
+  openModal(eventId) {
+    const event = eventsData.find((e) => e.id === eventId);
+    if (!event) return;
 
-  const modal = document.getElementById("eventModal");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalDate = document.getElementById("modalDate");
-  const modalDescription = document.getElementById("modalDescription");
+    const modal = document.getElementById("eventModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalDate = document.getElementById("modalDate");
+    const modalDescription = document.getElementById("modalDescription");
 
-  if (!modal || !modalTitle || !modalDate || !modalDescription) return;
+    if (!modal || !modalTitle || !modalDate || !modalDescription) return;
 
-  // Populate modal content
-  modalTitle.textContent = event.name;
-  modalDate.textContent = this.formatDate(event.startDate, event.endDate);
-  modalDescription.innerHTML = event.description
-    .split("\n")
-    .map((p) => `<p>${p}</p>`)
-    .join("");
+    // Populate modal content
+    modalTitle.textContent = event.name;
+    modalDate.textContent = this.formatDate(event.startDate, event.endDate);
+    modalDescription.innerHTML = event.description
+      .split("\n")
+      .map((p) => `<p>${p}</p>`)
+      .join("");
 
-  // Setup carousel
-  this.currentEventImages = event.images;
-  this.currentSlide = 0;
-  this.renderCarousel();
+    // Setup carousel
+    this.currentEventImages = event.images;
+    this.currentSlide = 0;
+    this.renderCarousel();
 
-  // Hide header when modal opens
-  const header = document.querySelector(".header");
-  if (header && typeof gsap !== "undefined") {
-    gsap.to(header, {
-      duration: 0.4,
-      y: -120,
-      ease: "power3.out",
-    });
-  }
-
-  // Show modal
-  modal.classList.add("active");
-  document.body.style.overflow = "hidden";
-
-  // GSAP animation
-  if (typeof gsap !== "undefined") {
-    gsap.fromTo(
-      ".modal-content",
-      { scale: 0.8, opacity: 0, y: 50 },
-      { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" }
-    );
-  }
-}
-
-// Close modal
-closeModal() {
-  const modal = document.getElementById("eventModal");
-  if (!modal) return;
-
-  if (typeof gsap !== "undefined") {
-    gsap.to(".modal-content", {
-      scale: 0.8,
-      opacity: 0,
-      y: 50,
-      duration: 0.3,
-      ease: "power2.in",
-      onComplete: () => {
-        modal.classList.remove("active");
-        document.body.style.overflow = "";
-        
-        // Show header when modal closes
-        const header = document.querySelector(".header");
-        if (header) {
-          gsap.to(header, {
-            duration: 0.5,
-            y: 0,
-            ease: "back.out(1.2)",
-          });
-        }
-      },
-    });
-  } else {
-    modal.classList.remove("active");
-    document.body.style.overflow = "";
-    
-    // Show header when modal closes (fallback without GSAP)
+    // Hide header when modal opens
     const header = document.querySelector(".header");
-    if (header) {
-      header.style.transform = "translateY(0)";
+    if (header && typeof gsap !== "undefined") {
+      gsap.to(header, {
+        duration: 0.4,
+        y: -120,
+        ease: "power3.out",
+      });
+    }
+
+    // Hide scroll-to-top button when modal opens
+    const scrollToTop = document.getElementById("scrollToTop");
+    if (scrollToTop) {
+      scrollToTop.style.display = "none";
+    }
+
+    // Show modal
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
+
+    // GSAP animation
+    if (typeof gsap !== "undefined") {
+      gsap.fromTo(
+        ".modal-content",
+        { scale: 0.8, opacity: 0, y: 50 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" }
+      );
     }
   }
-}
+
+  // Close modal
+  closeModal() {
+    const modal = document.getElementById("eventModal");
+    if (!modal) return;
+
+    if (typeof gsap !== "undefined") {
+      gsap.to(".modal-content", {
+        scale: 0.8,
+        opacity: 0,
+        y: 50,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => {
+          modal.classList.remove("active");
+          document.body.style.overflow = "";
+
+          // Show header when modal closes
+          const header = document.querySelector(".header");
+          if (header) {
+            gsap.to(header, {
+              duration: 0.5,
+              y: 0,
+              ease: "back.out(1.2)",
+            });
+          }
+
+          // Show scroll-to-top button when modal closes
+          const scrollToTop = document.getElementById("scrollToTop");
+          if (scrollToTop) {
+            scrollToTop.style.display = "flex";
+          }
+        },
+      });
+    } else {
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+
+      // Show header when modal closes (fallback without GSAP)
+      const header = document.querySelector(".header");
+      if (header) {
+        header.style.transform = "translateY(0)";
+      }
+
+      // Show scroll-to-top button when modal closes (fallback)
+      const scrollToTop = document.getElementById("scrollToTop");
+      if (scrollToTop) {
+        scrollToTop.style.display = "flex";
+      }
+    }
+  }
+
   // Render carousel
   renderCarousel() {
     const carouselSlides = document.getElementById("carouselSlides");
     const carouselDots = document.getElementById("carouselDots");
+    const carouselPrev = document.getElementById("carouselPrev");
+    const carouselNext = document.getElementById("carouselNext");
 
     if (!carouselSlides || !carouselDots) return;
 
@@ -322,9 +382,8 @@ closeModal() {
     carouselDots.innerHTML = this.currentEventImages
       .map(
         (_, index) => `
-      <div class="carousel-dot ${
-        index === 0 ? "active" : ""
-      }" data-slide="${index}"></div>
+      <div class="carousel-dot ${index === 0 ? "active" : ""
+          }" data-slide="${index}"></div>
     `
       )
       .join("");
@@ -336,6 +395,11 @@ closeModal() {
       }
     });
 
+    // Hide/show nav buttons based on number of images
+    const hasMultiple = this.currentEventImages.length > 1;
+    if (carouselPrev) carouselPrev.style.display = hasMultiple ? "flex" : "none";
+    if (carouselNext) carouselNext.style.display = hasMultiple ? "flex" : "none";
+
     this.updateCarousel();
   }
 
@@ -345,9 +409,8 @@ closeModal() {
     const dots = document.querySelectorAll(".carousel-dot");
 
     if (carouselSlides) {
-      carouselSlides.style.transform = `translateX(-${
-        this.currentSlide * 100
-      }%)`;
+      carouselSlides.style.transform = `translateX(-${this.currentSlide * 100
+        }%)`;
     }
 
     // Update dots
@@ -373,6 +436,7 @@ closeModal() {
 
   // Next slide
   nextSlide() {
+    if (this.currentEventImages.length <= 1) return;
     this.currentSlide =
       this.currentSlide < this.currentEventImages.length - 1
         ? this.currentSlide + 1
@@ -519,6 +583,12 @@ closeModal() {
 // Initialize Events Manager
 // ==========================================
 
-document.addEventListener("DOMContentLoaded", () => {
+function initEvents() {
   new EventsManager();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initEvents);
+} else {
+  initEvents();
+}

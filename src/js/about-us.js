@@ -1,14 +1,11 @@
 // About Us Section Animations
-document.addEventListener("DOMContentLoaded", function () {
+function initAbout() {
   // Register ScrollTrigger plugin
   gsap.registerPlugin(ScrollTrigger);
   
   // Load about content
   loadAboutContent();
 
-  // ==========================================
-  // Mission Section Animations
-  // ==========================================
 
   // Mission content animation
   gsap.to(".about-mission-content", {
@@ -785,7 +782,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   console.log("About Us animations initialized successfully");
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAbout);
+} else {
+  initAbout();
+}
 
 // Load about content from JSON
 async function loadAboutContent() {

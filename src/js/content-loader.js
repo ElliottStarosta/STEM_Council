@@ -58,15 +58,99 @@ function parseMarkdownFrontmatter(content) {
   const frontmatterText = match[1];
   const body = match[2];
   
-  // Parse YAML frontmatter (simple implementation)
+  // Parse YAML frontmatter with nested array support
   const frontmatter = {};
   const lines = frontmatterText.split('\n');
+  let currentKey = null;
+  let currentArray = null;
+  let currentObject = null;
   
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+    
+    // Skip empty lines
+    if (!trimmedLine) continue;
+    
+    // Check if this is a list item (starts with -)
+    if (trimmedLine.startsWith('-')) {
+      if (currentArray !== null) {
+        // Save previous object if exists
+        if (currentObject !== null) {
+          currentArray.push(currentObject);
+        }
+        
+        // Start a new object for this list item
+        currentObject = {};
+        
+        const itemContent = trimmedLine.substring(1).trim();
+        
+        // Check if it's a nested object (contains :)
+        if (itemContent.includes(':')) {
+          const colonIndex = itemContent.indexOf(':');
+          const itemKey = itemContent.substring(0, colonIndex).trim();
+          let itemValue = itemContent.substring(colonIndex + 1).trim();
+          
+          // Remove quotes
+          if ((itemValue.startsWith('"') && itemValue.endsWith('"')) || 
+              (itemValue.startsWith("'") && itemValue.endsWith("'"))) {
+            itemValue = itemValue.slice(1, -1);
+          }
+          
+          currentObject[itemKey] = itemValue;
+        } else {
+          // Simple array item (not an object)
+          let value = itemContent;
+          if ((value.startsWith('"') && value.endsWith('"')) || 
+              (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+          }
+          currentArray.push(value);
+          currentObject = null;
+        }
+      }
+      continue;
+    }
+    
+    // Check if this is a continuation of a nested object (indented property)
+    if (line.startsWith('    ') && currentObject !== null && line.includes(':')) {
+      const colonIndex = line.indexOf(':');
+      const itemKey = line.substring(0, colonIndex).trim();
+      let itemValue = line.substring(colonIndex + 1).trim();
+      
+      // Remove quotes
+      if ((itemValue.startsWith('"') && itemValue.endsWith('"')) || 
+          (itemValue.startsWith("'") && itemValue.endsWith("'"))) {
+        itemValue = itemValue.slice(1, -1);
+      }
+      
+      currentObject[itemKey] = itemValue;
+      continue;
+    }
+    
+    // Check for key-value pairs
     const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
+    if (colonIndex > 0 && !line.startsWith('    ')) {
+      // Save previous object if exists
+      if (currentObject !== null && currentArray !== null) {
+        currentArray.push(currentObject);
+        currentObject = null;
+      }
+      
       const key = line.substring(0, colonIndex).trim();
       let value = line.substring(colonIndex + 1).trim();
+      
+      // If value is empty, this might be starting an array
+      if (!value) {
+        currentKey = key;
+        currentArray = [];
+        frontmatter[key] = currentArray;
+        continue;
+      }
+      
+      // Reset array context
+      currentKey = null;
+      currentArray = null;
       
       // Remove quotes if present
       if ((value.startsWith('"') && value.endsWith('"')) || 
@@ -74,7 +158,7 @@ function parseMarkdownFrontmatter(content) {
         value = value.slice(1, -1);
       }
       
-      // Handle arrays (simple implementation)
+      // Handle inline arrays
       if (value.startsWith('[') && value.endsWith(']')) {
         try {
           value = JSON.parse(value);
@@ -85,6 +169,11 @@ function parseMarkdownFrontmatter(content) {
       
       frontmatter[key] = value;
     }
+  }
+  
+  // Don't forget to push the last object if it exists
+  if (currentObject !== null && currentArray !== null) {
+    currentArray.push(currentObject);
   }
   
   return {

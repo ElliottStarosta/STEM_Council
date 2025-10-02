@@ -1,28 +1,32 @@
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
-// Initialize hero animations when DOM is loaded
-document.addEventListener("DOMContentLoaded", function () {
-  loadHeroContent();
+// Initialize hero animations (runs immediately if DOM is already loaded)
+async function initHero() {
+  const heroData = await loadHeroContent();
   initHeroAnimations();
   initButtonInteractions();
   initParticlesAnimation();
-  initStatsAnimations();
-});
+  initStatsAnimations(heroData);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHero);
+} else {
+  initHero();
+}
 
 // Load hero content from JSON
 async function loadHeroContent() {
   try {
     console.log('Loading hero content...');
     
-    // Check if ContentLoader is available
     if (typeof ContentLoader === 'undefined') {
       console.error('ContentLoader is not available - waiting for it to load...');
-      // Wait a bit and try again
       await new Promise(resolve => setTimeout(resolve, 100));
       if (typeof ContentLoader === 'undefined') {
         console.error('ContentLoader still not available after waiting');
-        return;
+        return null;
       }
     }
     
@@ -31,7 +35,7 @@ async function loadHeroContent() {
     
     if (!heroData) {
       console.warn('Failed to load hero content, using default values');
-      return;
+      return null;
     }
 
     // Update description
@@ -63,8 +67,11 @@ async function loadHeroContent() {
         }
       });
     }
+    
+    return heroData;
   } catch (error) {
     console.error('Error loading hero content:', error);
+    return null;
   }
 }
 
@@ -548,18 +555,15 @@ function getEnhancedHoverColor(index) {
   return enhancedColors[index % enhancedColors.length];
 }
 
-// NEW: Stats animations function
-function initStatsAnimations() {
+function initStatsAnimations(heroData) {
   const stats = document.querySelectorAll(".hero-stat");
   
-  // Set initial state
   gsap.set(stats, {
     scale: 0,
     opacity: 0,
     y: 30,
   });
 
-  // Load animation with stagger
   gsap.to(stats, {
     scale: 1,
     opacity: 1,
@@ -567,21 +571,27 @@ function initStatsAnimations() {
     duration: 0.8,
     stagger: 0.2,
     ease: "back.out(1.7)",
-    delay: 1.8, // Start after main hero animations
+    delay: 1.8,
     onComplete: () => {
       startStatsIdleAnimation();
     }
   });
 
-  // Number count-up animation
   stats.forEach((stat, index) => {
     const numberElement = stat.querySelector(".hero-stat-number");
     if (!numberElement) return;
     
-    const finalNumber = numberElement.textContent.replace("+", "");
-    const isPlus = numberElement.textContent.includes("+");
+    let finalNumber, isPlus;
     
-    // Start from 0 and animate to final number
+    if (heroData && heroData.stats && heroData.stats[index]) {
+      const statData = heroData.stats[index].number;
+      finalNumber = statData.replace("+", "");
+      isPlus = statData.includes("+");
+    } else {
+      finalNumber = numberElement.textContent.replace("+", "");
+      isPlus = numberElement.textContent.includes("+");
+    }
+    
     const counter = { value: 0 };
     
     gsap.to(counter, {

@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+function initHeader() {
   // Register GSAP and ScrollToPlugin at the top
   if (typeof gsap !== 'undefined' && typeof ScrollToPlugin !== 'undefined') {
     gsap.registerPlugin(ScrollToPlugin);
@@ -458,4 +458,10 @@ document.addEventListener("DOMContentLoaded", function () {
   setHamburgerVisibility();
   setTimeout(setHamburgerVisibility, 100);
   setTimeout(setHamburgerVisibility, 500);
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHeader);
+} else {
+  initHeader();
+}

@@ -1,7 +1,7 @@
 ---
 name: "Summer Tech Conference 2025"
-startDate: "2025-07-15T09:00:00.000Z"
-endDate: "2025-07-17T17:00:00.000Z"
+startDate: "2025-10-15T09:00:00.000Z"
+endDate: "2025-10-17T17:00:00.000Z"
 images:
   - image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop"
   - image: "https://images.unsplash.com/photo-1551818255-e6e10975cd17?w=800&h=400&fit=crop"
