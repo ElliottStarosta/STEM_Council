@@ -1,3 +1,7 @@
+[build]
+  command = "npm run build && cp -r src/content dist/src/content"
+  publish = "dist"
+
 [[redirects]]
   from = "/admin/*"
   to = "/admin/index.html"
@@ -7,3 +11,13 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "*.md"
+  [headers.values]
+    Content-Type = "text/markdown; charset=utf-8"
+    
+[[headers]]
+  for = "*.json"
+  [headers.values]
+    Content-Type = "application/json; charset=utf-8"
