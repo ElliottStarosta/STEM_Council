@@ -289,25 +289,25 @@ window.addEventListener('load', () => {
 // Load clubs content from markdown files dynamically
 async function loadClubsContent() {
   try {
-    // Use Vite's import.meta.glob to dynamically discover all markdown files
-    const clubModules = import.meta.glob('/src/content/clubs/*.md', { 
-      query: '?raw',
-      import: 'default',
-      eager: true 
-    });
+    // Load the index file
+    const index = await ContentLoader.fetchJSON('/src/content/index.json');
+    
+    if (!index || !index.clubs) {
+      console.error('No clubs found in index');
+      return;
+    }
 
     const clubsGrid = document.querySelector('.clubs-grid');
     if (!clubsGrid) return;
 
     let clubsHTML = '';
     
-    for (const [path, rawContent] of Object.entries(clubModules)) {
-      const content = ContentLoader.parseMarkdownFrontmatter(rawContent);
+    // Load each club file from the index
+    for (const filename of index.clubs) {
+      const clubData = await ContentLoader.fetchMarkdown(`/src/content/clubs/${filename}`);
       
-      if (content && content.frontmatter) {
-        console.log('Raw club frontmatter:', content.frontmatter);
-        
-        const club = content.frontmatter;
+      if (clubData && clubData.frontmatter) {
+        const club = clubData.frontmatter;
         
         // Process socialLinks
         let socialLinks = [];
@@ -323,8 +323,6 @@ async function loadClubsContent() {
             return null;
           }).filter(link => link !== null);
         }
-        
-        console.log('Processed social links:', socialLinks);
         
         const socialLinksHTML = socialLinks.length > 0 ? socialLinks.map(link => 
           `<a href="${link.url}" class="club-link" title="${link.type}" target="_blank" rel="noopener noreferrer">

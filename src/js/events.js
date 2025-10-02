@@ -26,82 +26,71 @@ class EventsManager {
   // Load events from markdown files
   async loadEvents() {
     try {
-      // Use Vite's import.meta.glob to automatically discover all markdown files
-      const eventModules = import.meta.glob('/src/content/events/*.md', {
-        query: '?raw',
-        import: 'default',
-        eager: true
-      });
-
+      // Load the index file
+      const index = await ContentLoader.fetchJSON('/src/content/index.json');
+      
+      if (!index || !index.events) {
+        console.error('No events found in index');
+        eventsData = [];
+        return;
+      }
+  
       const loadedEvents = [];
       let eventId = 1;
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
-
-      // Process each discovered markdown file
-      for (const [path, rawContent] of Object.entries(eventModules)) {
+      today.setHours(0, 0, 0, 0);
+  
+      // Load each event file from the index
+      for (const filename of index.events) {
         try {
-          // Parse the markdown content
-          const content = ContentLoader.parseMarkdownFrontmatter(rawContent);
-
-          if (content && content.frontmatter) {
-            console.log(`Processing event from: ${path}`);
-            console.log('Raw frontmatter images:', content.frontmatter.images);
-
+          const eventData = await ContentLoader.fetchMarkdown(`/src/content/events/${filename}`);
+  
+          if (eventData && eventData.frontmatter) {
             // Check if event has already passed
-            const eventEndDate = new Date(content.frontmatter.endDate);
-            eventEndDate.setHours(23, 59, 59, 999); // Set to end of day
-
+            const eventEndDate = new Date(eventData.frontmatter.endDate);
+            eventEndDate.setHours(23, 59, 59, 999);
+  
             if (eventEndDate < today) {
-              console.log(`Skipping past event: ${content.frontmatter.name}`);
-              continue; // Skip this event if it's in the past
+              console.log(`Skipping past event: ${eventData.frontmatter.name}`);
+              continue;
             }
-
-            // Handle both nested objects and simple strings
+  
+            // Handle images
             let imagesFromFrontmatter = [];
-            if (content.frontmatter.images && Array.isArray(content.frontmatter.images)) {
-              imagesFromFrontmatter = content.frontmatter.images.map(img => {
-                // If img is an object with an 'image' property, extract it
+            if (eventData.frontmatter.images && Array.isArray(eventData.frontmatter.images)) {
+              imagesFromFrontmatter = eventData.frontmatter.images.map(img => {
                 if (typeof img === 'object' && img !== null && img.image) {
                   return img.image;
                 }
-                // Otherwise, assume it's already a string path
                 return img;
-              }).filter(img => img); // Remove any null/undefined values
+              }).filter(img => img);
             }
-
-            console.log('Processed images:', imagesFromFrontmatter);
-
+  
             const normalizedImages = (imagesFromFrontmatter.length > 0)
               ? imagesFromFrontmatter
               : ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'];
-
-            console.log('Final normalized images:', normalizedImages);
-
+  
             const event = {
               id: eventId++,
-              name: content.frontmatter.name,
-              startDate: content.frontmatter.startDate,
-              endDate: content.frontmatter.endDate,
-              description: content.body,
+              name: eventData.frontmatter.name,
+              startDate: eventData.frontmatter.startDate,
+              endDate: eventData.frontmatter.endDate,
+              description: eventData.body,
               images: normalizedImages,
-              filename: path.split('/').pop()
+              filename: filename
             };
             loadedEvents.push(event);
           }
         } catch (fileError) {
-          console.error(`Error processing event file ${path}:`, fileError);
+          console.error(`Error processing event file ${filename}:`, fileError);
         }
       }
-
-      // Sort events by start date (closest first - ascending order)
+  
       loadedEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-
       eventsData = loadedEvents;
       console.log(`Loaded ${eventsData.length} upcoming events dynamically:`, eventsData);
     } catch (error) {
       console.error('Error loading events:', error);
-      // Fallback to empty array
       eventsData = [];
     }
   }

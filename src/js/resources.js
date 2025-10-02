@@ -588,23 +588,25 @@ async function loadResourcesContent() {
       if (ctaBtnElement) ctaBtnElement.textContent = settingsData.ctaButtonText;
     }
 
-    // Use Vite's import.meta.glob to dynamically discover all markdown files
-    const resourceModules = import.meta.glob('/src/content/resources/*.md', { 
-      query: '?raw',
-      import: 'default',
-      eager: true 
-    });
+    // Load the index file
+    const index = await ContentLoader.fetchJSON('/src/content/index.json');
+    
+    if (!index || !index.resources) {
+      console.error('No resources found in index');
+      return;
+    }
 
     const resourcesGrid = document.querySelector('.resources-grid');
     if (!resourcesGrid) return;
 
     let resourcesHTML = '';
     
-    for (const [path, rawContent] of Object.entries(resourceModules)) {
-      const content = ContentLoader.parseMarkdownFrontmatter(rawContent);
+    // Load each resource file from the index
+    for (const filename of index.resources) {
+      const resourceData = await ContentLoader.fetchMarkdown(`/src/content/resources/${filename}`);
       
-      if (content && content.frontmatter) {
-        const resource = content.frontmatter;
+      if (resourceData && resourceData.frontmatter) {
+        const resource = resourceData.frontmatter;
         const tagsHTML = resource.tags ? resource.tags.map(tag => 
           `<span class="tag">${tag.tag}</span>`
         ).join('') : '';
