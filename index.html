@@ -8,15 +8,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>STEM Council</title>
-  <link rel="stylesheet" href="src/css/style.css" />
-  <link rel="stylesheet" href="src/css/header.css" />
-  <link rel="stylesheet" href="src/css/hero.css" />
-  <link rel="stylesheet" href="src/css/about-us.css" />
-  <link rel="stylesheet" href="src/css/clubs.css" />
-  <link rel="stylesheet" href="src/css/events.css" />
-  <link rel="stylesheet" href="src/css/footer.css" />
-  <link rel="stylesheet" href="src/css/resources.css" />
-  <link rel="stylesheet" href="src/css/contact.css" />
+  <link rel="stylesheet" href="/src/css/style.css" />
+  <link rel="stylesheet" href="/src/css/header.css" />
+  <link rel="stylesheet" href="/src/css/hero.css" />
+  <link rel="stylesheet" href="/src/css/about-us.css" />
+  <link rel="stylesheet" href="/src/css/clubs.css" />
+  <link rel="stylesheet" href="/src/css/events.css" />
+  <link rel="stylesheet" href="/src/css/footer.css" />
+  <link rel="stylesheet" href="/src/css/resources.css" />
+  <link rel="stylesheet" href="/src/css/contact.css" />
 
   <!-- Fonts -->
   <link
@@ -849,7 +849,7 @@
         </div>
         
         <div class="contact-form-container">
-          <form id="contactForm" class="contact-form" action="https://formspree.io/f/mblgnkja" method="POST">
+          <form id="contactForm" class="contact-form" action="https://formspree.io/f/mvgwrjre" method="POST">
             <div class="form-group">
               <label for="name">Name</label>
               <input type="text" id="name" name="name" placeholder="Your Name" required>
@@ -937,8 +937,8 @@
   <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
   <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollToPlugin.min.js"></script>
 
-  <script src="src/js/content-loader.js"></script>
-  <script src="src/js/scrolling.js"></script>
+  <script src="/src/js/content-loader.js"></script>
+  <script src="/src/js/scrolling.js"></script>
   <script>
     // Ensure ContentLoader is available globally before modules load
     window.addEventListener('DOMContentLoaded', () => {
@@ -955,16 +955,16 @@
         
         // Dynamically load modules to ensure proper order
         const modules = [
-          'src/js/header.js',
-          'src/js/hero.js',
-          'src/js/about-us.js',
-          'src/js/clubs.js',
-          'src/js/events.js',
-          'src/js/footer.js',
-          'src/js/cursor.js',
-          'src/js/resources.js',
-          'src/js/contact.js'
-        ];
+  '/src/js/header.js',
+  '/src/js/hero.js',
+  '/src/js/about-us.js',
+  '/src/js/clubs.js',
+  '/src/js/events.js',
+  '/src/js/footer.js',
+  '/src/js/cursor.js',
+  '/src/js/resources.js',
+  '/src/js/contact.js'
+];
         
         modules.forEach(module => {
           const script = document.createElement('script');

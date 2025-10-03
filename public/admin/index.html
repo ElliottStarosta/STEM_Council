@@ -1,56 +1,67 @@
 <!DOCTYPE html>
-<!--  Content Manager -->
 <html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Content Manager</title>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <title>STEM Council - Content Manager</title>
+  
+  <!-- MUST load Identity widget BEFORE Decap CMS -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
-  <div id="nc-root"></div>
-  <!-- Decap CMS will auto load config.yml -->
+  <!-- CMS mounts here -->
+  <script src="https://unpkg.com/decap-cms@^3.3.0/dist/decap-cms.js"></script>
+  
   <script>
-    // Global error handler for debugging
-    window.addEventListener('error', function(e) {
-      console.error('Global error caught:', e.error);
-      console.error('Error details:', {
-        message: e.message,
-        filename: e.filename,
-        lineno: e.lineno,
-        colno: e.colno,
-        stack: e.error ? e.error.stack : 'No stack trace'
-      });
-    });
-
-    // Ensure DOM is ready before initializing CMS
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM loaded, CMS should initialize now');
-      
-      // Check if the root element exists
-      const rootElement = document.getElementById('nc-root');
-      if (rootElement) {
-        console.log('Root element found:', rootElement);
-      } else {
-        console.error('Root element not found!');
-      }
-      
-      // Check if Decap CMS is loaded
-      if (typeof CMS !== 'undefined') {
-        console.log('Decap CMS loaded successfully');
-      } else {
-        console.error('Decap CMS not loaded');
-      }
-    });
+    console.log('=== Admin Panel Debug ===');
+    console.log('Netlify Identity loaded:', typeof netlifyIdentity !== 'undefined');
+    console.log('Decap CMS loaded:', typeof CMS !== 'undefined');
+    console.log('Current URL:', window.location.href);
     
-    // Fallback for older browsers
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM ready via fallback');
+    // Initialize Netlify Identity
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on('init', user => {
+        console.log('Identity initialized');
+        console.log('User:', user ? user.email : 'Not logged in');
+        
+        if (!user) {
+          // Open login modal immediately
+          console.log('No user found, opening login...');
+          window.netlifyIdentity.open();
+        }
+      });
+
+      // After login, reload to show CMS
+      window.netlifyIdentity.on('login', () => {
+        console.log('Login successful, reloading...');
+        document.location.reload();
+      });
+
+      // After logout, go to homepage
+      window.netlifyIdentity.on('logout', () => {
+        console.log('Logged out');
+        document.location.href = '/';
+      });
+
+      // Log any errors
+      window.netlifyIdentity.on('error', err => {
+        console.error('Identity error:', err);
       });
     } else {
-      console.log('DOM already ready');
+      console.error('Netlify Identity not available!');
+      console.error('Check that you have enabled Identity in your Netlify dashboard');
     }
+
+    // Check if CMS loaded
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (typeof CMS === 'undefined') {
+          console.error('Decap CMS failed to load');
+        } else {
+          console.log('CMS ready');
+        }
+      }, 1000);
+    });
   </script>
 </body>
 </html>

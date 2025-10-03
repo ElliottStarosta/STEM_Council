@@ -55,7 +55,6 @@ async function initContact() {
     }
   });
   
-  // Rest of the code remains the same...
   const formInputs = document.querySelectorAll('.form-group input, .form-group textarea');
   
   formInputs.forEach(input => {
@@ -80,11 +79,13 @@ async function initContact() {
   
   if (submitBtn) {
     submitBtn.addEventListener('mouseenter', () => {
-      gsap.to(submitBtn, {
-        scale: 1.05,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
+      if (!submitBtn.disabled) {
+        gsap.to(submitBtn, {
+          scale: 1.05,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
     });
     
     submitBtn.addEventListener('mouseleave', () => {
@@ -102,14 +103,27 @@ async function initContact() {
     contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      if (!submitBtn) return;
+      if (!submitBtn) {
+        console.error('Submit button not found');
+        return;
+      }
+      
+      // Validate form before submitting
+      if (!contactForm.checkValidity()) {
+        contactForm.reportValidity();
+        return;
+      }
       
       const originalBtnText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<i class="ri-loader-4-line"></i> Sending...';
       submitBtn.disabled = true;
       
+      
       try {
         const formData = new FormData(contactForm);
+        
+        
+        
         const response = await fetch(contactForm.action, {
           method: 'POST',
           body: formData,
@@ -118,23 +132,46 @@ async function initContact() {
           }
         });
         
+        
         if (response.ok) {
-          submitBtn.innerHTML = '<i class="ri-check-line"></i> Thank you for submitting!';
+          // Success
+          submitBtn.innerHTML = '<i class="ri-check-line"></i> Message Sent!';
+          submitBtn.style.backgroundColor = '#4CAF50';
+          
+          // Reset form
           contactForm.reset();
           
+          // Reset button after 3 seconds
           setTimeout(() => {
             submitBtn.innerHTML = originalBtnText;
+            submitBtn.style.backgroundColor = '';
+            submitBtn.disabled = false;
           }, 3000);
         } else {
-          throw new Error('Form submission failed');
+          // Server error
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Server error:', errorData);
+          throw new Error('Form submission failed: ' + response.status);
         }
       } catch (error) {
-        alert('There was a problem sending your message. Please try again.');
-        submitBtn.innerHTML = originalBtnText;
-      } finally {
-        submitBtn.disabled = false;
+        console.error('Form submission error:', error);
+        
+        // Show error message
+        submitBtn.innerHTML = '<i class="ri-close-line"></i> Failed to Send';
+        submitBtn.style.backgroundColor = '#f44336';
+        
+        alert('There was a problem sending your message. Please try again or email us directly at earlstem@gmail.com');
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+          submitBtn.innerHTML = originalBtnText;
+          submitBtn.style.backgroundColor = '';
+          submitBtn.disabled = false;
+        }, 2000);
       }
     });
+  } else {
+    console.error('Contact form not found');
   }
 }
 
@@ -159,7 +196,6 @@ async function loadContactContent() {
       return;
     }
 
-    console.log('Loaded contact data:', contactData); // Debug log
 
     // Update subtitle
     const subtitleElement = document.querySelector('.contact-subtitle');
@@ -171,7 +207,7 @@ async function loadContactContent() {
     const contactInfo = document.querySelector('.contact-info');
     if (contactInfo && contactData.contactMethods) {
       const contactMethodsHTML = contactData.contactMethods.map(method => `
-        <a href="${method.link}" class="contact-card-link" target="_blank" rel="noopener noreferrer">
+        <a href="${method.link}" class="contact-card-link" ${method.link.startsWith('http') ? 'target="_blank" rel="noopener noreferrer"' : ''}>
           <div class="contact-card">
             <div class="icon-wrapper">
               <i class="${method.icon}"></i>
@@ -186,7 +222,7 @@ async function loadContactContent() {
       
       // Re-trigger GSAP animations for newly inserted elements
       if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-        gsap.set('.contact-card', { opacity: 0, y: 50 }); // Reset initial state
+        gsap.set('.contact-card', { opacity: 0, y: 50 });
         
         gsap.to('.contact-card', {
           opacity: 1,
@@ -201,7 +237,6 @@ async function loadContactContent() {
           }
         });
         
-        // Refresh ScrollTrigger to recognize new elements
         ScrollTrigger.refresh();
       }
     }
