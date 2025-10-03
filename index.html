@@ -938,6 +938,7 @@
   <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollToPlugin.min.js"></script>
 
   <script src="src/js/content-loader.js"></script>
+  <script src="src/js/scrolling.js"></script>
   <script>
     // Ensure ContentLoader is available globally before modules load
     window.addEventListener('DOMContentLoaded', () => {
@@ -955,7 +956,6 @@
         // Dynamically load modules to ensure proper order
         const modules = [
           'src/js/header.js',
-          'src/js/scrolling.js', 
           'src/js/hero.js',
           'src/js/about-us.js',
           'src/js/clubs.js',

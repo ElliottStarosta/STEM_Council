@@ -911,14 +911,19 @@ section {
   .custom-cursor {
     display: none !important;
   }
-  
+  *, *::before, *::after {
+        cursor: default;
+    }
+    button, a, .hero-btn {
+        cursor: pointer !important;
+    }
   .cursor-trail {
     display: none !important;
   }
   
   /* Reset all cursor styles to default on mobile/touch */
   *, *::before, *::after {
-    cursor: auto !important;
+    cursor:default !important;
   }
   
   /* Also hide any cursor particles if they exist */
@@ -927,6 +932,10 @@ section {
   }
 }
 
+
+button {
+  cursor: pointer;
+}
 /* Touch device optimizations */
 @media (hover: none) and (pointer: coarse) {
   /* Improve touch targets */
