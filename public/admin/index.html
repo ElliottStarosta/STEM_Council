@@ -5,63 +5,175 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>STEM Council - Content Manager</title>
   
-  <!-- MUST load Identity widget BEFORE Decap CMS -->
+  <!-- Load Identity widget BEFORE Decap CMS -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* Loading screen */
+    .auth-loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #247e0c, #389342);
+      color: white;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .auth-loading.hidden {
+      display: none;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .auth-message {
+      font-size: 18px;
+      text-align: center;
+      max-width: 400px;
+      padding: 0 20px;
+    }
+  </style>
 </head>
 <body>
-  <!-- CMS mounts here -->
+  <!-- Loading indicator shown while authenticating -->
+  <div class="auth-loading" id="authLoading">
+    <div class="spinner"></div>
+    <div class="auth-message">
+      <strong>Initializing Content Manager...</strong>
+      <p>Please wait while we authenticate your session</p>
+    </div>
+  </div>
+  
+  <!-- CMS mounts here after authentication -->
   <script src="https://unpkg.com/decap-cms@^3.3.0/dist/decap-cms.js"></script>
   
   <script>
-    console.log('=== Admin Panel Debug ===');
+    console.log('=== STEM Council CMS Debug ===');
     console.log('Netlify Identity loaded:', typeof netlifyIdentity !== 'undefined');
     console.log('Decap CMS loaded:', typeof CMS !== 'undefined');
     console.log('Current URL:', window.location.href);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    const loadingScreen = document.getElementById('authLoading');
+    let authCheckComplete = false;
     
     // Initialize Netlify Identity
     if (window.netlifyIdentity) {
+      console.log('Starting Netlify Identity initialization...');
+      
       window.netlifyIdentity.on('init', user => {
-        console.log('Identity initialized');
-        console.log('User:', user ? user.email : 'Not logged in');
+        console.log('✓ Identity initialized');
+        console.log('User status:', user ? `Logged in as ${user.email}` : 'Not authenticated');
+        console.log('User role:', user?.app_metadata?.roles ? user.app_metadata.roles[0] : 'No role');
+        
+        authCheckComplete = true;
         
         if (!user) {
-          // Open login modal immediately
-          console.log('No user found, opening login...');
-          window.netlifyIdentity.open();
+          // Not logged in - show login modal
+          console.log('→ Opening login modal...');
+          loadingScreen.querySelector('.auth-message strong').textContent = 'Authentication Required';
+          loadingScreen.querySelector('.auth-message p').textContent = 'Please sign in to access the content manager';
+          
+          setTimeout(() => {
+            window.netlifyIdentity.open();
+          }, 500);
+        } else {
+          // Authenticated - hide loading and let CMS take over
+          console.log('✓ User authenticated - Loading CMS dashboard...');
+          setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+          }, 1000);
         }
       });
 
-      // After login, reload to show CMS
-      window.netlifyIdentity.on('login', () => {
-        console.log('Login successful, reloading...');
-        document.location.reload();
+      // Handle successful login
+      window.netlifyIdentity.on('login', user => {
+        console.log('✓ Login successful');
+        console.log('User:', user.email);
+        console.log('Reloading to initialize CMS with authenticated session...');
+        
+        // Reload page to properly initialize CMS with auth token
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       });
 
-      // After logout, go to homepage
+      // Handle logout
       window.netlifyIdentity.on('logout', () => {
-        console.log('Logged out');
-        document.location.href = '/';
+        console.log('✓ User logged out');
+        console.log('Redirecting to homepage...');
+        window.location.href = '/';
       });
 
-      // Log any errors
+      // Handle authentication errors
       window.netlifyIdentity.on('error', err => {
-        console.error('Identity error:', err);
+        console.error('✗ Identity error:', err);
+        loadingScreen.querySelector('.auth-message strong').textContent = 'Authentication Error';
+        loadingScreen.querySelector('.auth-message p').innerHTML = 
+          `Error: ${err.message}<br><br>Please try refreshing the page or contact an administrator.`;
+        loadingScreen.querySelector('.spinner').style.display = 'none';
       });
+
+      // Handle when login modal closes
+      window.netlifyIdentity.on('close', () => {
+        console.log('Login modal closed');
+        if (!authCheckComplete || !window.netlifyIdentity.currentUser()) {
+          console.log('User closed modal without logging in');
+        }
+      });
+      
     } else {
-      console.error('Netlify Identity not available!');
-      console.error('Check that you have enabled Identity in your Netlify dashboard');
+      console.error('✗ Netlify Identity widget failed to load');
+      loadingScreen.querySelector('.auth-message strong').textContent = 'Configuration Error';
+      loadingScreen.querySelector('.auth-message p').innerHTML = 
+        'Netlify Identity is not available.<br><br>Please ensure Identity is enabled in your Netlify dashboard.';
+      loadingScreen.querySelector('.spinner').style.display = 'none';
     }
 
-    // Check if CMS loaded
+    // Check if CMS loaded properly
     window.addEventListener('load', () => {
       setTimeout(() => {
         if (typeof CMS === 'undefined') {
-          console.error('Decap CMS failed to load');
+          console.error('✗ Decap CMS failed to load');
         } else {
-          console.log('CMS ready');
+          console.log('✓ Decap CMS loaded successfully');
+          
+          // Check if CMS is properly mounted
+          const cmsRoot = document.querySelector('[data-cms-root]') || 
+                         document.querySelector('#nc-root');
+          if (cmsRoot && cmsRoot.children.length > 0) {
+            console.log('✓ CMS interface rendered');
+            loadingScreen.classList.add('hidden');
+          }
         }
-      }, 1000);
+      }, 2000);
     });
+
+    // Timeout fallback - hide loading screen after 10 seconds
+    setTimeout(() => {
+      if (!loadingScreen.classList.contains('hidden')) {
+        console.warn('⚠ Loading timeout reached - hiding loading screen');
+        loadingScreen.classList.add('hidden');
+      }
+    }, 10000);
   </script>
 </body>
 </html>
