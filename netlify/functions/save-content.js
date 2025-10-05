@@ -43,7 +43,6 @@ exports.handler = async (event, context) => {
 
     // Helper function to set nested values in objects
     function setNestedValue(obj, path, value) {
-      // Split path by dots and brackets, filter empty strings
       const parts = path.split(/\.|\[|\]/).filter(p => p);
       
       let current = obj;
@@ -51,7 +50,6 @@ exports.handler = async (event, context) => {
         const part = parts[i];
         const nextPart = parts[i + 1];
         
-        // If next part is a number, ensure current is array
         if (!isNaN(nextPart)) {
           if (!Array.isArray(current[part])) {
             current[part] = [];
@@ -65,14 +63,23 @@ exports.handler = async (event, context) => {
         }
       }
       
-      // Set the final value
       const lastPart = parts[parts.length - 1];
       current[lastPart] = value;
     }
 
+    // Group changes by file
+    const fileChanges = {};
     for (const change of changes) {
-      const filePath = `src/content/${change.file}`;
-      console.log(`Attempting to update: ${filePath}, field: ${change.field}`);
+      if (!fileChanges[change.file]) {
+        fileChanges[change.file] = [];
+      }
+      fileChanges[change.file].push(change);
+    }
+
+    // Process each file once with all its changes
+    for (const [filename, fileChangesList] of Object.entries(fileChanges)) {
+      const filePath = `src/content/${filename}`;
+      console.log(`Updating ${filePath} with ${fileChangesList.length} changes`);
 
       try {
         const { data: currentFile } = await octokit.repos.getContent({
@@ -86,14 +93,17 @@ exports.handler = async (event, context) => {
           Buffer.from(currentFile.content, 'base64').toString()
         );
 
-        // Use helper function to set nested value
-        setNestedValue(content, change.field, change.value);
+        // Apply ALL changes to this file
+        for (const change of fileChangesList) {
+          setNestedValue(content, change.field, change.value);
+        }
 
+        // Make ONE commit with all changes
         await octokit.repos.createOrUpdateFileContents({
           owner,
           repo,
           path: filePath,
-          message: `Admin: Update ${change.field} in ${change.file}`,
+          message: `Admin: Update ${fileChangesList.length} field(s) in ${filename}`,
           content: Buffer.from(JSON.stringify(content, null, 2)).toString('base64'),
           sha: currentFile.sha,
           branch
@@ -110,7 +120,8 @@ exports.handler = async (event, context) => {
       statusCode: 200,
       body: JSON.stringify({
         message: "Changes saved successfully",
-        count: changes.length
+        count: changes.length,
+        filesUpdated: Object.keys(fileChanges).length
       })
     };
 
