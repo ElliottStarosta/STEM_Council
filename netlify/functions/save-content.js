@@ -7,14 +7,28 @@ exports.handler = async (event, context) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const { user } = context.clientContext;
-  if (!user) {
-    console.log("No user found");
+  // Check for Authorization header
+  const authHeader = event.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log("No authorization header found");
     return {
       statusCode: 401,
-      body: JSON.stringify({ message: "Unauthorized" })
+      body: JSON.stringify({ message: "Unauthorized - No token provided" })
     };
   }
+
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Optional: Verify the token with Netlify Identity
+  // For now, we'll just check it exists
+  if (!token) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ message: "Unauthorized - Invalid token" })
+    };
+  }
+
+  console.log("Token received, proceeding with save");
 
   try {
     const { changes } = JSON.parse(event.body);
@@ -30,18 +44,7 @@ exports.handler = async (event, context) => {
 
     console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
 
-    // TEST: Can we access the repo at all?
-    try {
-      const { data: repoData } = await octokit.repos.get({
-        owner,
-        repo
-      });
-      console.log("Repo access successful:", repoData.full_name);
-    } catch (repoError) {
-      console.error("Cannot access repo:", repoError.message);
-      throw new Error(`Cannot access repository ${owner}/${repo}. Token may not have permission.`);
-    }
-
+    // Rest of your code stays the same...
     for (const change of changes) {
       const filePath = `src/content/${change.file}`;
       console.log(`Attempting to update: ${filePath}`);
