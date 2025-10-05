@@ -577,12 +577,10 @@
     function createEditableHighlight(element) {
       const rect = element.getBoundingClientRect();
       const iframeRect = elements.siteIframe.getBoundingClientRect();
-      const iframeDoc = elements.siteIframe.contentDocument;
-      const scrollTop = iframeDoc.documentElement.scrollTop || iframeDoc.body.scrollTop;
 
       const highlight = document.createElement('div');
       highlight.className = 'editable-highlight';
-      highlight.style.top = (rect.top + iframeRect.top + scrollTop) + 'px';
+      highlight.style.top = (rect.top + iframeRect.top) + 'px';
       highlight.style.left = (rect.left + iframeRect.left) + 'px';
       highlight.style.width = rect.width + 'px';
       highlight.style.height = rect.height + 'px';
@@ -605,13 +603,13 @@
     function updateHighlightPositions() {
       try {
         const iframeRect = elements.siteIframe.getBoundingClientRect();
-        const iframeDoc = elements.siteIframe.contentDocument;
-        const scrollTop = iframeDoc.documentElement.scrollTop || iframeDoc.body.scrollTop;
 
         adminState.editableRegions.forEach(({ element, highlight }) => {
           const rect = element.getBoundingClientRect();
-          highlight.style.top = (rect.top + iframeRect.top + scrollTop) + 'px';
+          highlight.style.top = (rect.top + iframeRect.top) + 'px';
           highlight.style.left = (rect.left + iframeRect.left) + 'px';
+          highlight.style.width = rect.width + 'px';
+          highlight.style.height = rect.height + 'px';
         });
       } catch (e) {
         console.error('Error updating positions:', e);
