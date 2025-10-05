@@ -1,8 +1,3 @@
-/* ==========================================
-   STEM Council Admin Interface
-   Location: /admin/scripts/admin.js
-   ========================================== */
-
 // Admin state
 const adminState = {
   user: null,
@@ -32,9 +27,7 @@ const elements = {
   statusText: document.getElementById("statusText"),
 };
 
-/* ==========================================
-   Authentication
-   ========================================== */
+// Initialize Netlify Identity
 function initAuth() {
   if (!window.netlifyIdentity) {
     showStatus("Authentication service unavailable", "error");
@@ -42,11 +35,16 @@ function initAuth() {
   }
 
   netlifyIdentity.on("init", (user) => {
-    console.log("Identity initialized:", user ? "Authenticated" : "Not authenticated");
+    console.log(
+      "Identity initialized:",
+      user ? "Authenticated" : "Not authenticated"
+    );
 
     if (!user) {
+      // Show Netlify's native login modal
       netlifyIdentity.open();
     } else {
+      // User is authenticated
       adminState.user = user;
       showStatus("Authenticated as " + user.email, "success");
     }
@@ -70,9 +68,7 @@ function initAuth() {
   });
 }
 
-/* ==========================================
-   Iframe Integration
-   ========================================== */
+// Initialize iframe integration
 function initIframeIntegration() {
   elements.siteIframe.addEventListener("load", () => {
     console.log("Site loaded in iframe");
@@ -81,6 +77,7 @@ function initIframeIntegration() {
     }
   });
 
+  // Handle iframe scroll when in edit mode
   elements.siteIframe.addEventListener("load", () => {
     try {
       const iframeWindow = elements.siteIframe.contentWindow;
@@ -93,7 +90,7 @@ function initIframeIntegration() {
             }
           },
           true
-        );
+        ); // Use capture phase
       }
     } catch (e) {
       console.error("Cannot attach scroll listener:", e);
@@ -101,9 +98,7 @@ function initIframeIntegration() {
   });
 }
 
-/* ==========================================
-   Edit Mode Toggle
-   ========================================== */
+// Toggle edit mode
 elements.editModeToggle.addEventListener("click", () => {
   adminState.editMode = !adminState.editMode;
   elements.editModeToggle.classList.toggle("active");
@@ -115,9 +110,7 @@ elements.editModeToggle.addEventListener("click", () => {
   }
 });
 
-/* ==========================================
-   Scan Editable Content
-   ========================================== */
+// Scan for editable content
 function scanEditableContent() {
   try {
     const iframeDoc = elements.siteIframe.contentDocument;
@@ -128,6 +121,7 @@ function scanEditableContent() {
 
     clearEditableHighlights();
 
+    // Find all elements with data-editable attribute
     const editableElements = iframeDoc.querySelectorAll("[data-editable]");
 
     if (editableElements.length === 0) {
@@ -149,18 +143,17 @@ function scanEditableContent() {
   }
 }
 
-/* ==========================================
-   Create Editable Highlight
-   ========================================== */
+// Create editable highlight
 function createEditableHighlight(element) {
+  const iframeWindow = elements.siteIframe.contentWindow;
   const rect = element.getBoundingClientRect();
-  const iframeRect = elements.siteIframe.getBoundingClientRect();
 
   const highlight = document.createElement("div");
   highlight.className = "editable-highlight";
 
-  highlight.style.top = rect.top + iframeRect.top + "px";
-  highlight.style.left = rect.left + iframeRect.left + "px";
+  // Position relative to viewport, accounting for iframe scroll
+  highlight.style.top = rect.top + 15 + "px"; // 53px = toolbar height
+  highlight.style.left = rect.left + "px";
   highlight.style.width = rect.width + "px";
   highlight.style.height = rect.height + "px";
 
@@ -178,17 +171,13 @@ function createEditableHighlight(element) {
   adminState.editableRegions.push({ element, highlight });
 }
 
-/* ==========================================
-   Update Highlight Positions
-   ========================================== */
+// Update highlight positions on scroll
 function updateHighlightPositions() {
   try {
-    const iframeRect = elements.siteIframe.getBoundingClientRect();
-    
     adminState.editableRegions.forEach(({ element, highlight }) => {
       const rect = element.getBoundingClientRect();
-      highlight.style.top = rect.top + iframeRect.top + "px";
-      highlight.style.left = rect.left + iframeRect.left + "px";
+      highlight.style.top = rect.top + 15 + "px"; // 53px = toolbar height
+      highlight.style.left = rect.left + "px";
       highlight.style.width = rect.width + "px";
       highlight.style.height = rect.height + "px";
     });
@@ -197,17 +186,13 @@ function updateHighlightPositions() {
   }
 }
 
-/* ==========================================
-   Clear Highlights
-   ========================================== */
+// Clear editable highlights
 function clearEditableHighlights() {
   elements.editOverlay.innerHTML = "";
   adminState.editableRegions = [];
 }
 
-/* ==========================================
-   Edit Modal
-   ========================================== */
+// Open edit modal
 function openEditModal(element) {
   const editableId = element.dataset.editable;
   const contentFile = element.dataset.contentFile || "unknown.json";
@@ -222,21 +207,23 @@ function openEditModal(element) {
     originalValue: currentValue,
   };
 
+  // Build form
   elements.modalForm.innerHTML = `
-    <div class="form-group">
-      <label class="form-label">File: ${contentFile}</label>
-      <label class="form-label">Field: ${contentField}</label>
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="editContent">Content</label>
-      <textarea class="form-textarea" id="editContent" rows="6">${currentValue}</textarea>
-    </div>
-  `;
+        <div class="form-group">
+          <label class="form-label">File: ${contentFile}</label>
+          <label class="form-label">Field: ${contentField}</label>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editContent">Content</label>
+          <textarea class="form-textarea" id="editContent" rows="6">${currentValue}</textarea>
+        </div>
+      `;
 
   elements.editModal.classList.add("active");
   document.getElementById("editContent").focus();
 }
 
+// Close edit modal
 function closeEditModal() {
   elements.editModal.classList.remove("active");
   adminState.currentEdit = null;
@@ -245,12 +232,18 @@ function closeEditModal() {
 elements.modalCloseBtn.addEventListener("click", closeEditModal);
 elements.modalCancelBtn.addEventListener("click", closeEditModal);
 
+// Save edit from modal
 elements.modalSaveBtn.addEventListener("click", () => {
   const newValue = document.getElementById("editContent").value.trim();
 
-  if (adminState.currentEdit && newValue !== adminState.currentEdit.originalValue) {
+  if (
+    adminState.currentEdit &&
+    newValue !== adminState.currentEdit.originalValue
+  ) {
+    // Update the visual element
     adminState.currentEdit.element.textContent = newValue;
 
+    // Track the change
     const changeKey = `${adminState.currentEdit.contentFile}:${adminState.currentEdit.contentField}`;
     adminState.pendingChanges[changeKey] = {
       file: adminState.currentEdit.contentFile,
@@ -260,15 +253,13 @@ elements.modalSaveBtn.addEventListener("click", () => {
     };
 
     updateChangesUI();
-    showStatus('Change recorded. Click "Save Changes" to deploy.', "success");
+    showStatus('Change recorded. Click "Save Changes" to commit.', "success");
   }
 
   closeEditModal();
 });
 
-/* ==========================================
-   Changes Management
-   ========================================== */
+// Update changes UI
 function updateChangesUI() {
   const count = Object.keys(adminState.pendingChanges).length;
   elements.changesCount.textContent = count;
@@ -277,6 +268,7 @@ function updateChangesUI() {
   elements.saveBtn.disabled = count === 0;
 }
 
+// Discard changes
 elements.discardBtn.addEventListener("click", () => {
   if (confirm("Discard all unsaved changes?")) {
     adminState.pendingChanges = {};
@@ -286,9 +278,7 @@ elements.discardBtn.addEventListener("click", () => {
   }
 });
 
-/* ==========================================
-   Save Changes
-   ========================================== */
+// Save changes to GitHub via Netlify Function
 elements.saveBtn.addEventListener("click", async () => {
   if (Object.keys(adminState.pendingChanges).length === 0) return;
 
@@ -301,14 +291,19 @@ elements.saveBtn.addEventListener("click", async () => {
   elements.saveBtn.innerHTML = '<i class="ri-loader-4-line"></i> Saving...';
 
   try {
+    // Get user token
     const token = adminState.user.token.access_token;
 
-    const changesArray = Object.values(adminState.pendingChanges).map((change) => ({
-      file: change.file,
-      field: change.field,
-      value: change.value,
-    }));
+    // Prepare changes for API
+    const changesArray = Object.values(adminState.pendingChanges).map(
+      (change) => ({
+        file: change.file,
+        field: change.field,
+        value: change.value,
+      })
+    );
 
+    // Call Netlify Function
     const response = await fetch("/.netlify/functions/save-content", {
       method: "POST",
       headers: {
@@ -331,16 +326,12 @@ elements.saveBtn.addEventListener("click", async () => {
 
     adminState.pendingChanges = {};
     updateChangesUI();
-    showStatus("Changes saved! Starting deployment...", "success");
+    showStatus("Changes saved and pushed to GitHub!", "success");
 
-    // Open build page in new window
-    window.open("/admin/build.html", "_blank", "width=800,height=600");
-
+    // Reload iframe to show updated content
     setTimeout(() => {
       elements.siteIframe.contentWindow.location.reload();
-      showStatus("Deployment initiated! Check build window for progress.", "success");
     }, 1000);
-
   } catch (error) {
     console.error("Save error:", error);
     showStatus("Failed to save: " + error.message, "error");
@@ -350,21 +341,19 @@ elements.saveBtn.addEventListener("click", async () => {
   }
 });
 
-/* ==========================================
-   Logout
-   ========================================== */
+// Logout
 elements.logoutBtn.addEventListener("click", () => {
   if (Object.keys(adminState.pendingChanges).length > 0) {
-    if (!confirm("You have unsaved changes. Are you sure you want to logout?")) {
+    if (
+      !confirm("You have unsaved changes. Are you sure you want to logout?")
+    ) {
       return;
     }
   }
   netlifyIdentity.logout();
 });
 
-/* ==========================================
-   Status Messages
-   ========================================== */
+// Show status message
 function showStatus(message, type = "success") {
   elements.statusText.textContent = message;
   elements.statusMessage.className = `status-message ${type} visible`;
@@ -374,8 +363,6 @@ function showStatus(message, type = "success") {
   }, 4000);
 }
 
-/* ==========================================
-   Initialize
-   ========================================== */
+// Initialize
 initAuth();
 initIframeIntegration();
