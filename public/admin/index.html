@@ -609,7 +609,7 @@
         highlight.className = "editable-highlight";
 
         // Position relative to viewport, accounting for iframe scroll
-        highlight.style.top = rect.top + 20 + "px"; // 53px = toolbar height
+        highlight.style.top = rect.top + 15 + "px"; // 53px = toolbar height
         highlight.style.left = rect.left + "px";
         highlight.style.width = rect.width + "px";
         highlight.style.height = rect.height + "px";
@@ -633,7 +633,7 @@
         try {
           adminState.editableRegions.forEach(({ element, highlight }) => {
             const rect = element.getBoundingClientRect();
-            highlight.style.top = rect.top + 20 +  "px"; // 53px = toolbar height
+            highlight.style.top = rect.top + 15 +  "px"; // 53px = toolbar height
             highlight.style.left = rect.left + "px";
             highlight.style.width = rect.width + "px";
             highlight.style.height = rect.height + "px";
