@@ -1,14 +1,15 @@
 const { Octokit } = require("@octokit/rest");
 
 exports.handler = async (event, context) => {
-  // Only allow POST
+  console.log("Function invoked");
+  
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  // Check authentication
   const { user } = context.clientContext;
   if (!user) {
+    console.log("No user found");
     return {
       statusCode: 401,
       body: JSON.stringify({ message: "Unauthorized" })
@@ -17,8 +18,8 @@ exports.handler = async (event, context) => {
 
   try {
     const { changes } = JSON.parse(event.body);
+    console.log("Changes to save:", changes);
 
-    // Initialize Octokit with your GitHub token
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN
     });
@@ -27,36 +28,41 @@ exports.handler = async (event, context) => {
     const repo = process.env.GITHUB_REPO;
     const branch = "main";
 
-    // Process each change
+    console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
+
     for (const change of changes) {
       const filePath = `src/content/${change.file}`;
+      console.log(`Attempting to update: ${filePath}`);
 
-      // Get current file content
-      const { data: currentFile } = await octokit.repos.getContent({
-        owner,
-        repo,
-        path: filePath,
-        ref: branch
-      });
+      try {
+        const { data: currentFile } = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: filePath,
+          ref: branch
+        });
 
-      // Decode and parse JSON
-      const content = JSON.parse(
-        Buffer.from(currentFile.content, 'base64').toString()
-      );
+        const content = JSON.parse(
+          Buffer.from(currentFile.content, 'base64').toString()
+        );
 
-      // Update the field
-      content[change.field] = change.value;
+        content[change.field] = change.value;
 
-      // Commit the change
-      await octokit.repos.createOrUpdateFileContents({
-        owner,
-        repo,
-        path: filePath,
-        message: `Update ${change.field} in ${change.file}`,
-        content: Buffer.from(JSON.stringify(content, null, 2)).toString('base64'),
-        sha: currentFile.sha,
-        branch
-      });
+        await octokit.repos.createOrUpdateFileContents({
+          owner,
+          repo,
+          path: filePath,
+          message: `Admin: Update ${change.field} in ${change.file}`,
+          content: Buffer.from(JSON.stringify(content, null, 2)).toString('base64'),
+          sha: currentFile.sha,
+          branch
+        });
+
+        console.log(`Successfully updated: ${filePath}`);
+      } catch (fileError) {
+        console.error(`Error updating ${filePath}:`, fileError.message);
+        throw fileError;
+      }
     }
 
     return {
@@ -68,11 +74,12 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error("Save error:", error);
+    console.error("Save error:", error.message, error.stack);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        message: error.message
+      body: JSON.stringify({ 
+        message: error.message,
+        details: error.stack 
       })
     };
   }
