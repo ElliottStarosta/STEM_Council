@@ -30,6 +30,18 @@ exports.handler = async (event, context) => {
 
     console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
 
+    // TEST: Can we access the repo at all?
+    try {
+      const { data: repoData } = await octokit.repos.get({
+        owner,
+        repo
+      });
+      console.log("Repo access successful:", repoData.full_name);
+    } catch (repoError) {
+      console.error("Cannot access repo:", repoError.message);
+      throw new Error(`Cannot access repository ${owner}/${repo}. Token may not have permission.`);
+    }
+
     for (const change of changes) {
       const filePath = `src/content/${change.file}`;
       console.log(`Attempting to update: ${filePath}`);
@@ -70,7 +82,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         message: "Changes saved successfully",
         count: changes.length
-      })    
+      })
     };
 
   } catch (error) {
