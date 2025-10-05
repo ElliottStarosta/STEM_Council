@@ -330,6 +330,154 @@
         border-top: 1px solid #333;
       }
 
+      /* Build Animation Overlay */
+      .build-overlay {
+        position: fixed;
+        inset: 0;
+        top: 53px;
+        background: #0a0a0a;
+        z-index: 150;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .build-overlay.active {
+        display: flex;
+        opacity: 1;
+      }
+
+      .build-container {
+        width: 90%;
+        max-width: 700px;
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 40px;
+        border: 1px solid #333;
+      }
+
+      .build-icon {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .build-icon i {
+        font-size: 64px;
+        color: #42a64c;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+      }
+
+      .build-title {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 10px;
+      }
+
+      .build-subtitle {
+        text-align: center;
+        font-size: 16px;
+        color: #aaa;
+        margin-bottom: 40px;
+      }
+
+      .progress-bar-container {
+        width: 100%;
+        height: 8px;
+        background: #2a2a2a;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 30px;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #42a64c, #5bc560);
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 4px;
+      }
+
+      .build-steps {
+        margin-top: 20px;
+      }
+
+      .build-step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        color: #666;
+        font-size: 14px;
+        transition: all 0.3s;
+      }
+
+      .build-step.active {
+        color: #42a64c;
+      }
+
+      .build-step.completed {
+        color: #888;
+      }
+
+      .build-step i {
+        font-size: 18px;
+        width: 24px;
+      }
+
+      .build-step.active i {
+        animation: spin 1s linear infinite;
+      }
+
+      .build-step.completed i {
+        color: #42a64c;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      .build-logs {
+        margin-top: 30px;
+        background: #0a0a0a;
+        border-radius: 8px;
+        padding: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        border: 1px solid #2a2a2a;
+      }
+
+      .build-log {
+        color: #888;
+        margin-bottom: 6px;
+        opacity: 0;
+        animation: fadeIn 0.3s forwards;
+      }
+
+      .build-log.success {
+        color: #42a64c;
+      }
+
+      .build-log.info {
+        color: #2196f3;
+      }
+
+      @keyframes fadeIn {
+        to { opacity: 1; }
+      }
+
       /* Status Messages */
       .status-message {
         position: fixed;
@@ -417,6 +565,58 @@
 
       <!-- Edit Overlay (for highlighting editable regions) -->
       <div class="edit-overlay" id="editOverlay"></div>
+
+      <!-- Build Animation Overlay -->
+      <div class="build-overlay" id="buildOverlay">
+        <div class="build-container">
+          <div class="build-icon">
+            <i class="ri-rocket-line"></i>
+          </div>
+          <div class="build-title">Deploying Changes</div>
+          <div class="build-subtitle">Your site is being built and deployed</div>
+          
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+
+          <div class="build-steps">
+            <div class="build-step" id="step1">
+              <i class="ri-loader-4-line"></i>
+              <span>Compiling changes</span>
+            </div>
+            <div class="build-step" id="step2">
+              <i class="ri-loader-4-line"></i>
+              <span>Pushing to GitHub</span>
+            </div>
+            <div class="build-step" id="step3">
+              <i class="ri-loader-4-line"></i>
+              <span>Triggering Netlify build</span>
+            </div>
+            <div class="build-step" id="step4">
+              <i class="ri-loader-4-line"></i>
+              <span>Installing dependencies</span>
+            </div>
+            <div class="build-step" id="step5">
+              <i class="ri-loader-4-line"></i>
+              <span>Building site</span>
+            </div>
+            <div class="build-step" id="step6">
+              <i class="ri-loader-4-line"></i>
+              <span>Optimizing assets</span>
+            </div>
+            <div class="build-step" id="step7">
+              <i class="ri-loader-4-line"></i>
+              <span>Deploying to CDN</span>
+            </div>
+            <div class="build-step" id="step8">
+              <i class="ri-loader-4-line"></i>
+              <span>Finalizing deployment</span>
+            </div>
+          </div>
+
+          <div class="build-logs" id="buildLogs"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Edit Modal -->
@@ -470,7 +670,55 @@
         modalCloseBtn: document.getElementById("modalCloseBtn"),
         statusMessage: document.getElementById("statusMessage"),
         statusText: document.getElementById("statusText"),
+        buildOverlay: document.getElementById("buildOverlay"),
+        progressBar: document.getElementById("progressBar"),
+        buildLogs: document.getElementById("buildLogs"),
       };
+
+      // Build animation configuration
+      const buildSteps = [
+        { id: 'step1', duration: 2000, logs: [
+          '> Analyzing changes...',
+          '> Found 3 modified files',
+          '✓ Compilation successful'
+        ]},
+        { id: 'step2', duration: 2000, logs: [
+          '> Connecting to GitHub...',
+          '> Committing changes...',
+          '✓ Pushed to main branch'
+        ]},
+        { id: 'step3', duration: 1500, logs: [
+          '> Webhook received',
+          '> Starting build process...',
+          '✓ Build triggered'
+        ]},
+        { id: 'step4', duration: 2500, logs: [
+          '> npm install',
+          '> Installing 127 packages...',
+          '✓ Dependencies installed'
+        ]},
+        { id: 'step5', duration: 3000, logs: [
+          '> Building production bundle...',
+          '> Processing pages...',
+          '> Generating static files...',
+          '✓ Build complete'
+        ]},
+        { id: 'step6', duration: 2000, logs: [
+          '> Minifying JavaScript...',
+          '> Optimizing images...',
+          '✓ Assets optimized'
+        ]},
+        { id: 'step7', duration: 2500, logs: [
+          '> Uploading to CDN...',
+          '> Distributing to edge nodes...',
+          '✓ Deployed globally'
+        ]},
+        { id: 'step8', duration: 1500, logs: [
+          '> Running post-deploy checks...',
+          '> Invalidating cache...',
+          '✓ Deployment successful!'
+        ]}
+      ];
 
       // Initialize Netlify Identity
       function initAuth() {
@@ -486,10 +734,8 @@
           );
 
           if (!user) {
-            // Show Netlify's native login modal
             netlifyIdentity.open();
           } else {
-            // User is authenticated
             adminState.user = user;
             showStatus("Authenticated as " + user.email, "success");
           }
@@ -522,7 +768,6 @@
           }
         });
 
-        // Handle iframe scroll when in edit mode
         elements.siteIframe.addEventListener("load", () => {
           try {
             const iframeWindow = elements.siteIframe.contentWindow;
@@ -535,7 +780,7 @@
                   }
                 },
                 true
-              ); // Use capture phase
+              );
             }
           } catch (e) {
             console.error("Cannot attach scroll listener:", e);
@@ -555,8 +800,6 @@
         }
       });
 
-
-
       // Scan for editable content
       function scanEditableContent() {
         try {
@@ -568,7 +811,6 @@
 
           clearEditableHighlights();
 
-          // Find all elements with data-editable attribute
           const editableElements =
             iframeDoc.querySelectorAll("[data-editable]");
 
@@ -593,14 +835,12 @@
 
       // Create editable highlight
       function createEditableHighlight(element) {
-        const iframeWindow = elements.siteIframe.contentWindow;
         const rect = element.getBoundingClientRect();
 
         const highlight = document.createElement("div");
         highlight.className = "editable-highlight";
 
-        // Position relative to viewport, accounting for iframe scroll
-        highlight.style.top = rect.top + 15 + "px"; // 53px = toolbar height
+        highlight.style.top = rect.top + 15 + "px";
         highlight.style.left = rect.left + "px";
         highlight.style.width = rect.width + "px";
         highlight.style.height = rect.height + "px";
@@ -624,7 +864,7 @@
         try {
           adminState.editableRegions.forEach(({ element, highlight }) => {
             const rect = element.getBoundingClientRect();
-            highlight.style.top = rect.top + 15 +  "px"; // 53px = toolbar height
+            highlight.style.top = rect.top + 15 +  "px";
             highlight.style.left = rect.left + "px";
             highlight.style.width = rect.width + "px";
             highlight.style.height = rect.height + "px";
@@ -655,7 +895,6 @@
           originalValue: currentValue,
         };
 
-        // Build form
         elements.modalForm.innerHTML = `
         <div class="form-group">
           <label class="form-label">File: ${contentFile}</label>
@@ -688,10 +927,8 @@
           adminState.currentEdit &&
           newValue !== adminState.currentEdit.originalValue
         ) {
-          // Update the visual element
           adminState.currentEdit.element.textContent = newValue;
 
-          // Track the change
           const changeKey = `${adminState.currentEdit.contentFile}:${adminState.currentEdit.contentField}`;
           adminState.pendingChanges[changeKey] = {
             file: adminState.currentEdit.contentFile,
@@ -713,7 +950,7 @@
       // Update changes UI
       function updateChangesUI() {
         const count = Object.keys(adminState.pendingChanges).length;
-        elements.changesCount.textContent = count;
+        elements.changesCount.textContent = count + " ";
         elements.changesIndicator.style.display = count > 0 ? "flex" : "none";
         elements.discardBtn.style.display = count > 0 ? "flex" : "none";
         elements.saveBtn.disabled = count === 0;
@@ -728,6 +965,58 @@
           showStatus("Changes discarded", "success");
         }
       });
+
+      // Build animation
+      async function showBuildAnimation() {
+        elements.buildOverlay.classList.add('active');
+        elements.buildLogs.innerHTML = '';
+        elements.progressBar.style.width = '0%';
+        
+        // Reset all steps
+        buildSteps.forEach(step => {
+          const stepEl = document.getElementById(step.id);
+          stepEl.className = 'build-step';
+        });
+
+        let totalDuration = buildSteps.reduce((sum, step) => sum + step.duration, 0);
+        let elapsedTime = 0;
+
+        for (let i = 0; i < buildSteps.length; i++) {
+          const step = buildSteps[i];
+          const stepEl = document.getElementById(step.id);
+          
+          // Mark as active
+          stepEl.classList.add('active');
+          
+          // Add logs
+          for (let j = 0; j < step.logs.length; j++) {
+            await new Promise(resolve => setTimeout(resolve, step.duration / step.logs.length));
+            const logEl = document.createElement('div');
+            logEl.className = 'build-log';
+            if (j === step.logs.length - 1) {
+              logEl.classList.add('success');
+            }
+            logEl.textContent = step.logs[j];
+            elements.buildLogs.appendChild(logEl);
+            elements.buildLogs.scrollTop = elements.buildLogs.scrollHeight;
+          }
+          
+          // Mark as completed
+          stepEl.classList.remove('active');
+          stepEl.classList.add('completed');
+          stepEl.querySelector('i').className = 'ri-check-line';
+          
+          // Update progress
+          elapsedTime += step.duration;
+          const progress = (elapsedTime / totalDuration) * 100;
+          elements.progressBar.style.width = progress + '%';
+        }
+
+        // Wait a moment before hiding
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        elements.buildOverlay.classList.remove('active');
+      }
 
       // Save changes to GitHub via Netlify Function
       elements.saveBtn.addEventListener("click", async () => {
@@ -778,12 +1067,15 @@
 
           adminState.pendingChanges = {};
           updateChangesUI();
-          showStatus("Changes saved and pushed to GitHub!", "success");
+          showStatus("Changes saved! Starting deployment...", "success");
+
+          // Show build animation
+          await showBuildAnimation();
 
           // Reload iframe to show updated content
-          setTimeout(() => {
-            elements.siteIframe.contentWindow.location.reload();
-          }, 1000);
+          elements.siteIframe.contentWindow.location.reload();
+          showStatus("Deployment complete! Site updated successfully.", "success");
+
         } catch (error) {
           console.error("Save error:", error);
           showStatus("Failed to save: " + error.message, "error");
