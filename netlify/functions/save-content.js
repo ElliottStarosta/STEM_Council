@@ -7,7 +7,6 @@ exports.handler = async (event, context) => {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  // Check for Authorization header
   const authHeader = event.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.log("No authorization header found");
@@ -19,8 +18,6 @@ exports.handler = async (event, context) => {
 
   const token = authHeader.replace('Bearer ', '');
   
-  // Optional: Verify the token with Netlify Identity
-  // For now, we'll just check it exists
   if (!token) {
     return {
       statusCode: 401,
@@ -44,10 +41,38 @@ exports.handler = async (event, context) => {
 
     console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
 
-    // Rest of your code stays the same...
+    // Helper function to set nested values in objects
+    function setNestedValue(obj, path, value) {
+      // Split path by dots and brackets, filter empty strings
+      const parts = path.split(/\.|\[|\]/).filter(p => p);
+      
+      let current = obj;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        const nextPart = parts[i + 1];
+        
+        // If next part is a number, ensure current is array
+        if (!isNaN(nextPart)) {
+          if (!Array.isArray(current[part])) {
+            current[part] = [];
+          }
+          current = current[part];
+        } else {
+          if (!current[part]) {
+            current[part] = {};
+          }
+          current = current[part];
+        }
+      }
+      
+      // Set the final value
+      const lastPart = parts[parts.length - 1];
+      current[lastPart] = value;
+    }
+
     for (const change of changes) {
       const filePath = `src/content/${change.file}`;
-      console.log(`Attempting to update: ${filePath}`);
+      console.log(`Attempting to update: ${filePath}, field: ${change.field}`);
 
       try {
         const { data: currentFile } = await octokit.repos.getContent({
@@ -61,7 +86,8 @@ exports.handler = async (event, context) => {
           Buffer.from(currentFile.content, 'base64').toString()
         );
 
-        content[change.field] = change.value;
+        // Use helper function to set nested value
+        setNestedValue(content, change.field, change.value);
 
         await octokit.repos.createOrUpdateFileContents({
           owner,
