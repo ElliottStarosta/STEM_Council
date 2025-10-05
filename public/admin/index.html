@@ -1,179 +1,788 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>STEM Council - Content Manager</title>
-  
-  <!-- Load Identity widget BEFORE Decap CMS -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STEM Council Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
-    
-    /* Loading screen */
-    .auth-loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      background: #0a0a0a;
+    }
+
+    /* Authentication Screen */
+    .auth-screen {
+      position: fixed;
+      inset: 0;
       background: linear-gradient(135deg, #247e0c, #389342);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .auth-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .auth-content {
+      text-align: center;
       color: white;
-      flex-direction: column;
-      gap: 20px;
+      padding: 40px;
+      max-width: 400px;
     }
-    
-    .auth-loading.hidden {
-      display: none;
-    }
-    
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid rgba(255, 255, 255, 0.3);
+
+    .auth-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
       border-top-color: white;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+      margin: 0 auto 30px;
     }
-    
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
-    .auth-message {
+
+    .auth-content h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .auth-content p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    /* Admin Interface */
+    .admin-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .admin-container.visible {
+      opacity: 1;
+    }
+
+    /* Toolbar */
+    .admin-toolbar {
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      z-index: 100;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .admin-logo {
       font-size: 18px;
-      text-align: center;
-      max-width: 400px;
-      padding: 0 20px;
+      font-weight: 700;
+      color: #42a64c;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .edit-mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: #2a2a2a;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #3a3a3a;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #42a64c;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+
+    .toggle-label {
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .toolbar-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-save {
+      background: #42a64c;
+      color: white;
+    }
+
+    .btn-save:hover:not(:disabled) {
+      background: #389342;
+      transform: translateY(-1px);
+    }
+
+    .btn-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-cancel {
+      background: #3a3a3a;
+      color: white;
+    }
+
+    .btn-cancel:hover {
+      background: #4a4a4a;
+    }
+
+    .btn-logout {
+      background: transparent;
+      color: #ff4444;
+      border: 1px solid #ff4444;
+    }
+
+    .btn-logout:hover {
+      background: #ff4444;
+      color: white;
+    }
+
+    .changes-indicator {
+      padding: 6px 12px;
+      background: #ff9800;
+      color: white;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .site-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+
+    /* Edit Overlay */
+    .edit-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      top: 53px;
+    }
+
+    .edit-overlay.active {
+      pointer-events: auto;
+    }
+
+    .editable-highlight {
+      position: absolute;
+      border: 2px dashed #42a64c;
+      background: rgba(66, 166, 76, 0.1);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: all 0.2s;
+      border-radius: 4px;
+    }
+
+    .editable-highlight:hover {
+      background: rgba(66, 166, 76, 0.2);
+      border-style: solid;
+    }
+
+    .edit-button {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 28px;
+      height: 28px;
+      background: #42a64c;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .edit-button i {
+      color: white;
+      font-size: 14px;
+    }
+
+    /* Edit Modal */
+    .edit-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .edit-modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow: auto;
+      padding: 24px;
+      color: white;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #333;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .modal-close:hover {
+      background: #2a2a2a;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #aaa;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 12px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #42a64c;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #333;
+    }
+
+    /* Status Messages */
+    .status-message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: #2a2a2a;
+      border-radius: 8px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 300;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+
+    .status-message.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .status-message.success {
+      background: #42a64c;
+    }
+
+    .status-message.error {
+      background: #ff4444;
     }
   </style>
 </head>
 <body>
-  <!-- Loading indicator shown while authenticating -->
-  <div class="auth-loading" id="authLoading">
-    <div class="spinner"></div>
-    <div class="auth-message">
-      <strong>Initializing Content Manager...</strong>
-      <p>Please wait while we authenticate your session</p>
+  <!-- Authentication Screen -->
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-content">
+      <div class="auth-spinner"></div>
+      <h2 id="authTitle">Authenticating...</h2>
+      <p id="authMessage">Please wait while we verify your credentials</p>
     </div>
   </div>
-  
-  <!-- CMS mounts here after authentication -->
-  <script src="https://unpkg.com/decap-cms@^3.3.0/dist/decap-cms.js"></script>
-  
+
+  <!-- Admin Interface -->
+  <div class="admin-container" id="adminContainer">
+    <!-- Toolbar -->
+    <div class="admin-toolbar">
+      <div class="toolbar-left">
+        <div class="admin-logo">
+          <i class="ri-dashboard-line"></i>
+          STEM Council Admin
+        </div>
+        <div class="edit-mode-toggle">
+          <div class="toggle-switch" id="editModeToggle"></div>
+          <span class="toggle-label">Edit Mode</span>
+        </div>
+        <div class="changes-indicator" id="changesIndicator" style="display: none;">
+          <i class="ri-alert-line"></i>
+          <span id="changesCount">0</span> unsaved changes
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="toolbar-btn btn-cancel" id="discardBtn" style="display: none;">
+          <i class="ri-close-line"></i>
+          Discard
+        </button>
+        <button class="toolbar-btn btn-save" id="saveBtn" disabled>
+          <i class="ri-save-line"></i>
+          Save Changes
+        </button>
+        <button class="toolbar-btn btn-logout" id="logoutBtn">
+          <i class="ri-logout-box-line"></i>
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Area with iframe -->
+    <div class="content-area">
+      <iframe class="site-iframe" id="siteIframe" src="/"></iframe>
+    </div>
+
+    <!-- Edit Overlay (for highlighting editable regions) -->
+    <div class="edit-overlay" id="editOverlay"></div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="edit-modal" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Content</h3>
+        <button class="modal-close" id="modalCloseBtn">×</button>
+      </div>
+      <div id="modalForm"></div>
+      <div class="modal-actions">
+        <button class="toolbar-btn btn-cancel" id="modalCancelBtn">Cancel</button>
+        <button class="toolbar-btn btn-save" id="modalSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Message -->
+  <div class="status-message" id="statusMessage">
+    <i class="ri-information-line"></i>
+    <span id="statusText"></span>
+  </div>
+
   <script>
-    console.log('=== STEM Council CMS Debug ===');
-    console.log('Netlify Identity loaded:', typeof netlifyIdentity !== 'undefined');
-    console.log('Decap CMS loaded:', typeof CMS !== 'undefined');
-    console.log('Current URL:', window.location.href);
-    console.log('Timestamp:', new Date().toISOString());
-    
-    const loadingScreen = document.getElementById('authLoading');
-    let authCheckComplete = false;
-    
+    // Admin state
+    const adminState = {
+      user: null,
+      editMode: false,
+      pendingChanges: {},
+      editableRegions: [],
+      currentEdit: null
+    };
+
+    // DOM elements
+    const elements = {
+      authScreen: document.getElementById('authScreen'),
+      adminContainer: document.getElementById('adminContainer'),
+      editModeToggle: document.getElementById('editModeToggle'),
+      editOverlay: document.getElementById('editOverlay'),
+      siteIframe: document.getElementById('siteIframe'),
+      saveBtn: document.getElementById('saveBtn'),
+      discardBtn: document.getElementById('discardBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      changesIndicator: document.getElementById('changesIndicator'),
+      changesCount: document.getElementById('changesCount'),
+      editModal: document.getElementById('editModal'),
+      modalForm: document.getElementById('modalForm'),
+      modalSaveBtn: document.getElementById('modalSaveBtn'),
+      modalCancelBtn: document.getElementById('modalCancelBtn'),
+      modalCloseBtn: document.getElementById('modalCloseBtn'),
+      statusMessage: document.getElementById('statusMessage'),
+      statusText: document.getElementById('statusText')
+    };
+
     // Initialize Netlify Identity
-    if (window.netlifyIdentity) {
-      console.log('Starting Netlify Identity initialization...');
-      
-      window.netlifyIdentity.on('init', user => {
-        console.log('✓ Identity initialized');
-        console.log('User status:', user ? `Logged in as ${user.email}` : 'Not authenticated');
-        console.log('User role:', user?.app_metadata?.roles ? user.app_metadata.roles[0] : 'No role');
-        
-        authCheckComplete = true;
+    function initAuth() {
+      if (!window.netlifyIdentity) {
+        showStatus('Authentication service unavailable', 'error');
+        return;
+      }
+
+      netlifyIdentity.on('init', user => {
+        console.log('Identity initialized:', user ? 'Authenticated' : 'Not authenticated');
         
         if (!user) {
-          // Not logged in - show login modal
-          console.log('→ Opening login modal...');
-          loadingScreen.querySelector('.auth-message strong').textContent = 'Authentication Required';
-          loadingScreen.querySelector('.auth-message p').textContent = 'Please sign in to access the content manager';
-          
-          setTimeout(() => {
-            window.netlifyIdentity.open();
-          }, 500);
+          // Show login modal
+          document.getElementById('authTitle').textContent = 'Authentication Required';
+          document.getElementById('authMessage').textContent = 'Please sign in to access the admin panel';
+          setTimeout(() => netlifyIdentity.open(), 500);
         } else {
-          // Authenticated - hide loading and let CMS take over
-          console.log('✓ User authenticated - Loading CMS dashboard...');
-          setTimeout(() => {
-            loadingScreen.classList.add('hidden');
-          }, 1000);
+          // User is authenticated
+          adminState.user = user;
+          showAdminInterface();
         }
       });
 
-      // Handle successful login
-      window.netlifyIdentity.on('login', user => {
-        console.log('✓ Login successful');
-        console.log('User:', user.email);
-        console.log('Reloading to initialize CMS with authenticated session...');
-        
-        // Reload page to properly initialize CMS with auth token
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
+      netlifyIdentity.on('login', user => {
+        console.log('Login successful:', user.email);
+        adminState.user = user;
+        showAdminInterface();
+        netlifyIdentity.close();
       });
 
-      // Handle logout
-      window.netlifyIdentity.on('logout', () => {
-        console.log('✓ User logged out');
-        console.log('Redirecting to homepage...');
+      netlifyIdentity.on('logout', () => {
+        console.log('User logged out');
         window.location.href = '/';
       });
 
-      // Handle authentication errors
-      window.netlifyIdentity.on('error', err => {
-        console.error('✗ Identity error:', err);
-        loadingScreen.querySelector('.auth-message strong').textContent = 'Authentication Error';
-        loadingScreen.querySelector('.auth-message p').innerHTML = 
-          `Error: ${err.message}<br><br>Please try refreshing the page or contact an administrator.`;
-        loadingScreen.querySelector('.spinner').style.display = 'none';
+      netlifyIdentity.on('error', err => {
+        console.error('Identity error:', err);
+        showStatus('Authentication error: ' + err.message, 'error');
       });
-
-      // Handle when login modal closes
-      window.netlifyIdentity.on('close', () => {
-        console.log('Login modal closed');
-        if (!authCheckComplete || !window.netlifyIdentity.currentUser()) {
-          console.log('User closed modal without logging in');
-        }
-      });
-      
-    } else {
-      console.error('✗ Netlify Identity widget failed to load');
-      loadingScreen.querySelector('.auth-message strong').textContent = 'Configuration Error';
-      loadingScreen.querySelector('.auth-message p').innerHTML = 
-        'Netlify Identity is not available.<br><br>Please ensure Identity is enabled in your Netlify dashboard.';
-      loadingScreen.querySelector('.spinner').style.display = 'none';
     }
 
-    // Check if CMS loaded properly
-    window.addEventListener('load', () => {
+    // Show admin interface
+    function showAdminInterface() {
+      elements.authScreen.classList.add('hidden');
       setTimeout(() => {
-        if (typeof CMS === 'undefined') {
-          console.error('✗ Decap CMS failed to load');
-        } else {
-          console.log('✓ Decap CMS loaded successfully');
-          
-          // Check if CMS is properly mounted
-          const cmsRoot = document.querySelector('[data-cms-root]') || 
-                         document.querySelector('#nc-root');
-          if (cmsRoot && cmsRoot.children.length > 0) {
-            console.log('✓ CMS interface rendered');
-            loadingScreen.classList.add('hidden');
-          }
+        elements.adminContainer.classList.add('visible');
+        initIframeIntegration();
+      }, 300);
+    }
+
+    // Initialize iframe integration
+    function initIframeIntegration() {
+      elements.siteIframe.addEventListener('load', () => {
+        console.log('Site loaded in iframe');
+        if (adminState.editMode) {
+          scanEditableContent();
         }
-      }, 2000);
+      });
+    }
+
+    // Toggle edit mode
+    elements.editModeToggle.addEventListener('click', () => {
+      adminState.editMode = !adminState.editMode;
+      elements.editModeToggle.classList.toggle('active');
+      elements.editOverlay.classList.toggle('active');
+      
+      if (adminState.editMode) {
+        scanEditableContent();
+      } else {
+        clearEditableHighlights();
+      }
     });
 
-    // Timeout fallback - hide loading screen after 10 seconds
-    setTimeout(() => {
-      if (!loadingScreen.classList.contains('hidden')) {
-        console.warn('⚠ Loading timeout reached - hiding loading screen');
-        loadingScreen.classList.add('hidden');
+    // Scan for editable content
+    function scanEditableContent() {
+      try {
+        const iframeDoc = elements.siteIframe.contentDocument;
+        if (!iframeDoc) return;
+
+        clearEditableHighlights();
+
+        // Define editable selectors based on your content structure
+        const editableSelectors = [
+          '.hero-description p',
+          '.mission-statement',
+          '.section-description',
+          '.club-description',
+          '.contact-subtitle'
+        ];
+
+        editableSelectors.forEach(selector => {
+          const elements = iframeDoc.querySelectorAll(selector);
+          elements.forEach(el => {
+            createEditableHighlight(el);
+          });
+        });
+
+      } catch (error) {
+        console.error('Cannot access iframe content:', error);
+        showStatus('Cannot access site content. Make sure the admin page is served from the same domain.', 'error');
       }
-    }, 10000);
+    }
+
+    // Create editable highlight
+    function createEditableHighlight(element) {
+      const rect = element.getBoundingClientRect();
+      const iframeRect = elements.siteIframe.getBoundingClientRect();
+
+      const highlight = document.createElement('div');
+      highlight.className = 'editable-highlight';
+      highlight.style.top = (rect.top + iframeRect.top) + 'px';
+      highlight.style.left = (rect.left + iframeRect.left) + 'px';
+      highlight.style.width = rect.width + 'px';
+      highlight.style.height = rect.height + 'px';
+
+      const editBtn = document.createElement('div');
+      editBtn.className = 'edit-button';
+      editBtn.innerHTML = '<i class="ri-edit-line"></i>';
+      highlight.appendChild(editBtn);
+
+      highlight.addEventListener('click', () => openEditModal(element));
+
+      elements.editOverlay.appendChild(highlight);
+      adminState.editableRegions.push({ element, highlight });
+    }
+
+    // Clear editable highlights
+    function clearEditableHighlights() {
+      elements.editOverlay.innerHTML = '';
+      adminState.editableRegions = [];
+    }
+
+    // Open edit modal
+    function openEditModal(element) {
+      const contentPath = element.dataset.contentPath || 'unknown';
+      const contentField = element.dataset.contentField || 'text';
+      const currentValue = element.textContent.trim();
+
+      adminState.currentEdit = {
+        element,
+        contentPath,
+        contentField,
+        originalValue: currentValue
+      };
+
+      // Build form based on content type
+      elements.modalForm.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Content Path: ${contentPath}</label>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="editContent">Content</label>
+          <textarea class="form-textarea" id="editContent" rows="6">${currentValue}</textarea>
+        </div>
+      `;
+
+      elements.editModal.classList.add('active');
+    }
+
+    // Close edit modal
+    function closeEditModal() {
+      elements.editModal.classList.remove('active');
+      adminState.currentEdit = null;
+    }
+
+    elements.modalCloseBtn.addEventListener('click', closeEditModal);
+    elements.modalCancelBtn.addEventListener('click', closeEditModal);
+
+    // Save edit from modal
+    elements.modalSaveBtn.addEventListener('click', () => {
+      const newValue = document.getElementById('editContent').value.trim();
+      
+      if (adminState.currentEdit && newValue !== adminState.currentEdit.originalValue) {
+        // Update the visual element
+        adminState.currentEdit.element.textContent = newValue;
+
+        // Track the change
+        const changeKey = `${adminState.currentEdit.contentPath}:${adminState.currentEdit.contentField}`;
+        adminState.pendingChanges[changeKey] = {
+          path: adminState.currentEdit.contentPath,
+          field: adminState.currentEdit.contentField,
+          value: newValue,
+          originalValue: adminState.currentEdit.originalValue
+        };
+
+        updateChangesUI();
+        showStatus('Change recorded', 'success');
+      }
+
+      closeEditModal();
+    });
+
+    // Update changes UI
+    function updateChangesUI() {
+      const count = Object.keys(adminState.pendingChanges).length;
+      elements.changesCount.textContent = count;
+      elements.changesIndicator.style.display = count > 0 ? 'flex' : 'none';
+      elements.discardBtn.style.display = count > 0 ? 'flex' : 'none';
+      elements.saveBtn.disabled = count === 0;
+    }
+
+    // Discard changes
+    elements.discardBtn.addEventListener('click', () => {
+      if (confirm('Discard all unsaved changes?')) {
+        adminState.pendingChanges = {};
+        updateChangesUI();
+        elements.siteIframe.contentWindow.location.reload();
+        showStatus('Changes discarded', 'success');
+      }
+    });
+
+    // Save changes
+    elements.saveBtn.addEventListener('click', async () => {
+      if (Object.keys(adminState.pendingChanges).length === 0) return;
+
+      elements.saveBtn.disabled = true;
+      elements.saveBtn.innerHTML = '<i class="ri-loader-4-line"></i> Saving...';
+
+      try {
+        // Here you would make an API call to your backend
+        // which would update the JSON files and commit to GitHub
+        
+        // For demonstration:
+        console.log('Changes to save:', adminState.pendingChanges);
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        adminState.pendingChanges = {};
+        updateChangesUI();
+        showStatus('Changes saved successfully!', 'success');
+      } catch (error) {
+        console.error('Save error:', error);
+        showStatus('Failed to save changes', 'error');
+      } finally {
+        elements.saveBtn.disabled = false;
+        elements.saveBtn.innerHTML = '<i class="ri-save-line"></i> Save Changes';
+      }
+    });
+
+    // Logout
+    elements.logoutBtn.addEventListener('click', () => {
+      if (Object.keys(adminState.pendingChanges).length > 0) {
+        if (!confirm('You have unsaved changes. Are you sure you want to logout?')) {
+          return;
+        }
+      }
+      netlifyIdentity.logout();
+    });
+
+    // Show status message
+    function showStatus(message, type = 'success') {
+      elements.statusText.textContent = message;
+      elements.statusMessage.className = `status-message ${type} visible`;
+      
+      setTimeout(() => {
+        elements.statusMessage.classList.remove('visible');
+      }, 3000);
+    }
+
+    // Initialize
+    initAuth();
   </script>
 </body>
 </html>
