@@ -26,7 +26,7 @@ exports.handler = async (event, context) => {
 
     const owner = process.env.GITHUB_OWNER;
     const repo = process.env.GITHUB_REPO;
-    const branch = "main";
+    const branch = "admin";
 
     console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
 
@@ -70,7 +70,7 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         message: "Changes saved successfully",
         count: changes.length
-      })
+      })    
     };
 
   } catch (error) {
