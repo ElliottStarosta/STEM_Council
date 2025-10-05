@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Site...</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="stylesheet" href="build.css" />
+  <link rel="stylesheet" href="/src/css/style.css">
+  
+</head>
+<body>
+  <!-- Build Page -->
+  <div class="build-page">
+    <div class="container">
+      <div class="build-content">
+        <!-- Build Icon -->
+        <div class="build-icon">
+          <i class="ri-rocket-line"></i>
+        </div>
+
+        <!-- Build Title -->
+        <h1 class="build-title">Deploying Changes</h1>
+        <p class="build-subtitle">Your site is being built and deployed to production</p>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- Build Steps -->
+        <div class="build-steps">
+          <div class="build-step" id="step1">
+            <i class="ri-loader-4-line"></i>
+            <span>Compiling changes</span>
+          </div>
+          <div class="build-step" id="step2">
+            <i class="ri-loader-4-line"></i>
+            <span>Pushing to GitHub</span>
+          </div>
+          <div class="build-step" id="step3">
+            <i class="ri-loader-4-line"></i>
+            <span>Triggering build</span>
+          </div>
+          <div class="build-step" id="step4">
+            <i class="ri-loader-4-line"></i>
+            <span>Installing dependencies</span>
+          </div>
+          <div class="build-step" id="step5">
+            <i class="ri-loader-4-line"></i>
+            <span>Building site</span>
+          </div>
+          <div class="build-step" id="step6">
+            <i class="ri-loader-4-line"></i>
+            <span>Optimizing assets</span>
+          </div>
+          <div class="build-step" id="step7">
+            <i class="ri-loader-4-line"></i>
+            <span>Deploying to CDN</span>
+          </div>
+          <div class="build-step" id="step8">
+            <i class="ri-loader-4-line"></i>
+            <span>Finalizing</span>
+          </div>
+        </div>
+
+        <!-- Build Logs -->
+        <div class="build-logs" id="buildLogs"></div>
+
+        <!-- Completion Message -->
+        <div class="build-complete" id="buildComplete" style="display: block;">
+  <div class="build-complete-inner">
+    <i class="ri-checkbox-circle-line"></i>
+    <p>Deployment successful!</p>
+    <span class="build-complete-sub">Window will close automatically</span>
+  </div>
+</div>
+
+      </div>
+    </div>
+
+    <!-- Background Elements (matching hero) -->
+    <div class="build-bg">
+      <div class="build-bg-circle build-bg-circle-1"></div>
+      <div class="build-bg-circle build-bg-circle-2"></div>
+      <div class="build-bg-circle build-bg-circle-3"></div>
+      <div class="build-particles">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+        <div class="particle particle-7"></div>
+        <div class="particle particle-8"></div>
+      </div>
+    </div>
+  </div>
+
+   <div class="custom-cursor" id="customCursor">
+    <div class="cursor-ring"></div>
+    <div class="cursor-core"></div>
+    <div class="cursor-dot"></div>
+    <div class="cursor-particle" style="--random-x: 15px; --random-y: -10px;"></div>
+    <div class="cursor-particle" style="--random-x: -12px; --random-y: 8px;"></div>
+    <div class="cursor-particle" style="--random-x: 8px; --random-y: 12px;"></div>
+    <div class="cursor-particle" style="--random-x: -15px; --random-y: -8px;"></div>
+  </div>
+
+  <div class="cursor-trail" id="trail1"></div>
+  <div class="cursor-trail" id="trail2"></div>
+  <div class="cursor-trail" id="trail3"></div>
+
+  <script src="build.js"></script>
+  <script src="/src/js/cursor.js"></script>
+</body>
+</html>
