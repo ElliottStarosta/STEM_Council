@@ -127,8 +127,8 @@
   }
 
   .hero-description {
-    transform: translateY(30px);
-    opacity: 0;
+    /* transform: translateY(30px); */
+    /* opacity: 0; */
     will-change: transform, opacity;
   }
 
@@ -177,8 +177,8 @@
     cursor: pointer;
     transition: var(--transition-smooth);
     overflow: hidden;
-    transform: translateX(40px);
-    opacity: 0;
+    /* transform: translateX(40px); */
+    /* opacity: 0; */
     min-height: 72px;
     will-change: transform, opacity;
     backdrop-filter: blur(10px);
