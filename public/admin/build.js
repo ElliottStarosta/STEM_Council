@@ -147,12 +147,8 @@ async function runBuildAnimation() {
 
   // Auto-close after 3 seconds
   setTimeout(() => {
-    if (window.opener) {
-      window.close();
-    } else {
-      addLog("You can close this window now.", "info");
-    }
-  }, 3000);
+  window.location.href = '/';
+}, 2000);
 }
 
 /* ==========================================

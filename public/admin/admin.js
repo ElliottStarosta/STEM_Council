@@ -330,8 +330,8 @@ elements.saveBtn.addEventListener("click", async () => {
 
     // Reload iframe to show updated content
     setTimeout(() => {
-      elements.siteIframe.contentWindow.location.reload();
-    }, 1000);
+  window.location.href = '/build.html';
+}, 1000);
   } catch (error) {
     console.error("Save error:", error);
     showStatus("Failed to save: " + error.message, "error");
