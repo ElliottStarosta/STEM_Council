@@ -1,8 +1,12 @@
 
 // Clubs Section JavaScript
+// Register GSAP plugins (ensure this is done before any animation)
+if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 function initClubs() {
-  loadClubsContent();
-  initClubsSection();
+  loadClubsContent(); // Only call after content is loaded
 }
 
 if (document.readyState === 'loading') {
@@ -10,6 +14,7 @@ if (document.readyState === 'loading') {
 } else {
   initClubs();
 }
+
 
 function initClubsSection() {
   createClubsParticles();
@@ -350,15 +355,15 @@ async function loadClubsContent() {
     
     clubsGrid.innerHTML = clubsHTML;
 
+    // Set initial GSAP states for club cards to prevent FOUC
     if (typeof gsap !== 'undefined') {
-      gsap.fromTo(
-        '.club-card',
-        { opacity: 0, y: 40, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.08 }
-      );
+      gsap.set('.club-card', { opacity: 0, y: 40, scale: 0.95 });
     }
 
-    initClubInteractions();
+    // Now initialize animations and interactions
+    initClubsSection();
+
+    // Refresh ScrollTrigger after DOM update
     if (typeof ScrollTrigger !== 'undefined') {
       ScrollTrigger.refresh();
     }
