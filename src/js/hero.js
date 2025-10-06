@@ -80,6 +80,8 @@ async function loadHeroContent() {
 
 // Main hero animation function
 function initHeroAnimations() {
+  document.body.classList.add('loaded');
+
   // Set initial states to prevent FOUC (Flash of Unstyled Content)
   gsap.set(".adjective", {
     y: 50,
