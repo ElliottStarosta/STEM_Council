@@ -3,7 +3,10 @@ gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 // Initialize hero animations (runs immediately if DOM is already loaded)
 async function initHero() {
+  if (window.__heroAnimationInitialized) return;
+  window.__heroAnimationInitialized = true;
   const heroData = await loadHeroContent();
+  // Ensure all content is loaded before animation
   initHeroAnimations();
   initButtonInteractions();
   initParticlesAnimation();
@@ -100,6 +103,7 @@ function initHeroAnimations() {
   tl.to(".adjective", {
     y: 0,
     opacity: 1,
+    pointerEvents: "auto",
     duration: 0.8,
     stagger: 0.2,
     ease: "power3.out",
