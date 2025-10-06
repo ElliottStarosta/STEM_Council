@@ -633,16 +633,14 @@ async function loadResourcesContent() {
     
     resourcesGrid.innerHTML = resourcesHTML;
 
+    // Set initial GSAP states for resource cards to prevent FOUC
     if (typeof gsap !== 'undefined') {
-      gsap.fromTo(
-        '.resource-card',
-        { opacity: 0, y: 40, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: 'power2.out', stagger: 0.06 }
-      );
+      gsap.set('.resource-card', { opacity: 0, y: 40, scale: 0.95 });
     }
 
     initResourcesInteractions();
     initCategoryTabs();
+    initResourcesAnimations();
     if (typeof ScrollTrigger !== 'undefined') {
       ScrollTrigger.refresh();
     }
