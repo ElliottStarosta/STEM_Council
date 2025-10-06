@@ -81,7 +81,6 @@ function initHeroAnimations() {
   gsap.set(".adjective", {
     y: 50,
     opacity: 0,
-    clearProps: "all", // This prevents style conflicts
   });
   gsap.set(".hero-description", { y: 30, opacity: 0 });
   gsap.set(".hero-btn", { x: 40, opacity: 0 });
