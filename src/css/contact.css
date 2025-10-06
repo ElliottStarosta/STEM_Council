@@ -9,6 +9,18 @@
   align-items: center;
 }
 
+.contact-title,
+.contact-subtitle,
+.contact-card,
+.contact-form-container,
+.form-group,
+.submit-btn,
+.contact-bg-circle,
+.contact-particles .particle {
+  opacity: 0;
+  visibility: hidden;
+}
+
 .contact-header {
   text-align: left;
   margin-bottom: 6rem;

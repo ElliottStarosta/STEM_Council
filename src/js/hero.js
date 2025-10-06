@@ -6,7 +6,8 @@ async function initHero() {
   if (window.__heroAnimationInitialized) return;
   window.__heroAnimationInitialized = true;
   const heroData = await loadHeroContent();
-  // Ensure all content is loaded before animation
+  // Wait a tick to ensure DOM is ready
+  await new Promise(resolve => setTimeout(resolve, 50));
   initHeroAnimations();
   initButtonInteractions();
   initParticlesAnimation();
@@ -78,23 +79,30 @@ async function loadHeroContent() {
   }
 }
 
-// Main hero animation function
+// Main hero animation function - COMPLETELY FIXED
 function initHeroAnimations() {
   document.body.classList.add('loaded');
 
-  const adjectives = document.querySelectorAll(".adjective");
-  adjectives.forEach(adj => {
-    adj.style.animationPlayState = 'paused';
-  });
-
-  // Set initial states to prevent FOUC (Flash of Unstyled Content)
+  // Set initial states for all elements
   gsap.set(".adjective", {
     y: 50,
-    opacity: 0,
+    opacity: 0
   });
-  gsap.set(".hero-description", { y: 30, opacity: 0 });
-  gsap.set(".hero-btn", { x: 40, opacity: 0 });
-  gsap.set(".hero-bg-circle", { scale: 0, opacity: 0 });
+  
+  gsap.set(".hero-description", { 
+    y: 30, 
+    opacity: 0 
+  });
+  
+  gsap.set(".hero-btn", { 
+    x: 40, 
+    opacity: 0 
+  });
+  
+  gsap.set(".hero-bg-circle", { 
+    scale: 0, 
+    opacity: 0 
+  });
 
   // Create master timeline
   const tl = gsap.timeline({
@@ -103,63 +111,50 @@ function initHeroAnimations() {
     },
   });
 
-  // Animate adjectives with stagger - FIX: Don't override CSS styles
-  tl.to(".adjective", {
+  // SEPARATE TIMELINE FOR ADJECTIVES - FAST AND SMOOTH
+  const adjectives = document.querySelectorAll(".adjective");
+  adjectives.forEach((adj, index) => {
+    const adjectiveTL = gsap.timeline();
+    
+    adjectiveTL.to(adj, {
+      y: 0,
+      opacity: 1,
+      duration: 0.5,
+      ease: "power3.out",
+    })
+    .call(() => {
+      adj.classList.add("animate-in");
+    }, null, "-=0.2"); // Underline starts while adjective is still animating in
+    
+    // Add to main timeline with stagger
+    tl.add(adjectiveTL, index * 0.6);
+  });
+
+  // Continue with description AFTER adjectives
+  tl.to(".hero-description", {
     y: 0,
     opacity: 1,
-    pointerEvents: "auto",
-    duration: 0.8,
-    stagger: 0.2,
+    duration: 0.6,
     ease: "power3.out",
-    onComplete: function () {
-      // Add the animate-in class to trigger underline animation
-      document.querySelectorAll(".adjective").forEach((adj) => {
-        adj.classList.add("animate-in");
-      });
-    },
-  })
+  }, "+=0.2") // Small gap after last adjective
 
+  // Animate buttons with stagger
+  .to(".hero-btn", {
+    x: 0,
+    opacity: 1,
+    duration: 0.6,
+    stagger: 0.15,
+    ease: "power3.out",
+  }, "-=0.4")
 
-
-    // Animate description
-    .to(
-      ".hero-description",
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        ease: "power3.out",
-      },
-      "-=0.4"
-    )
-
-    // Animate buttons with stagger
-    .to(
-      ".hero-btn",
-      {
-        x: 0,
-        opacity: 1,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: "power3.out",
-      },
-      "-=0.6"
-    )
-
-    // Animate background elements
-    .to(
-      ".hero-bg-circle",
-      {
-        scale: 1,
-        opacity: 1,
-        duration: 1.2,
-        stagger: 0.3,
-        ease: "back.out(1.7)",
-      },
-      "-=1.2"
-    )
-
-    
+  // Animate background elements
+  .to(".hero-bg-circle", {
+    scale: 1,
+    opacity: 1,
+    duration: 1,
+    stagger: 0.2,
+    ease: "back.out(1.7)",
+  }, "-=0.8");
 
   // Scroll-triggered animations for re-entry
   ScrollTrigger.create({
@@ -167,7 +162,6 @@ function initHeroAnimations() {
     start: "top 80%",
     end: "bottom 20%",
     onEnter: () => {
-      // Add subtle parallax effect to background elements
       gsap.to(".hero-bg-circle-1", {
         y: -50,
         duration: 2,
@@ -181,7 +175,6 @@ function initHeroAnimations() {
       });
     },
     onLeave: () => {
-      // Reset background positions
       gsap.to(".hero-bg-circle-1, .hero-bg-circle-2", {
         y: 0,
         duration: 1,
@@ -213,7 +206,6 @@ function initButtonInteractions() {
   const buttons = document.querySelectorAll(".hero-btn");
 
   buttons.forEach((button) => {
-    // Hover animations
     button.addEventListener("mouseenter", function () {
       gsap.to(this, {
         scale: 1.05,
@@ -256,7 +248,6 @@ function initButtonInteractions() {
       });
     });
 
-    // Click animations
     button.addEventListener("mousedown", function () {
       gsap.to(this, {
         scale: 0.98,
@@ -273,15 +264,11 @@ function initButtonInteractions() {
       });
     });
 
-    // Click handlers for navigation (now handled by universal scrolling.js)
     button.addEventListener("click", function (event) {
-      // Add click ripple effect
       createRippleEffect(this, event);
     });
   });
 }
-
-
 
 // Enhanced ripple effect
 function createRippleEffect(button, event) {
@@ -337,7 +324,6 @@ function initIntersectionObserver() {
   observer.observe(heroSection);
 }
 
-// Initialize intersection observer
 initIntersectionObserver();
 
 // Handle window resize for responsive animations
@@ -361,7 +347,7 @@ function debounce(func, wait) {
   };
 }
 
-// COMPLETELY FIXED PARTICLE ANIMATION SYSTEM
+// FIXED PARTICLE ANIMATION SYSTEM
 function initParticlesAnimation() {
   const particles = document.querySelectorAll(".particle");
   
@@ -369,31 +355,6 @@ function initParticlesAnimation() {
     console.warn("No particles found");
     return;
   }
-
-  // Store original particle properties
-  const originalParticleProps = [];
-  
-  particles.forEach((particle, index) => {
-    const computedStyles = window.getComputedStyle(particle);
-    
-    originalParticleProps.push({
-      color: 'rgba(255, 255, 255, 0.6)',
-      scale: 1,
-      opacity: 0.6,
-      transform: particle.style.transform || '',
-      backgroundColor: particle.style.backgroundColor || '',
-      borderColor: particle.style.borderColor || ''
-    });
-    
-    // Set initial particle styling to ensure they're visible
-    particle.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
-    particle.style.border = '1px solid rgba(255, 255, 255, 0.3)';
-    particle.style.borderRadius = '50%';
-    particle.style.width = '8px';
-    particle.style.height = '8px';
-    particle.style.position = 'absolute';
-    particle.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-  });
 
   // Set initial GSAP state for particles
   gsap.set(particles, {
@@ -437,7 +398,6 @@ function initParticlesAnimation() {
     });
   });
 
-  // Reset particle positions when mouse leaves
   heroSection.addEventListener("mouseleave", () => {
     gsap.to(particles, {
       x: 0,
@@ -467,34 +427,30 @@ function initParticlesAnimation() {
     },
   });
 
-  // FIXED: Enhanced particle pulse effect
-  addSmoothParticleEffect(particles, originalParticleProps);
+  addSmoothParticleEffect(particles);
 }
 
-// COMPLETELY REWRITTEN SMOOTH PARTICLE EFFECT
-function addSmoothParticleEffect(particles, originalParticleProps) {
+// FIXED SMOOTH PARTICLE EFFECT
+function addSmoothParticleEffect(particles) {
   const buttons = document.querySelectorAll(".hero-btn");
   let particleTimelines = [];
 
   buttons.forEach((button) => {
     button.addEventListener("mouseenter", () => {
-      // Kill any existing timelines
       particleTimelines.forEach(tl => tl.kill());
       particleTimelines = [];
 
       particles.forEach((particle, index) => {
         const hoverColor = getEnhancedHoverColor(index);
         
-        // Create smooth timeline for each particle
         const tl = gsap.timeline();
         
-        // FIXED: Use GSAP for everything, including color changes
         tl.to(particle, {
-          scale: 3, // MUCH BIGGER - This will definitely show
+          scale: 3,
           opacity: 1,
           duration: 0.5,
           ease: "power2.out",
-          delay: index * 0.03, // Smooth stagger
+          delay: index * 0.03,
         })
         .to(particle, {
           backgroundColor: hoverColor,
@@ -517,14 +473,10 @@ function addSmoothParticleEffect(particles, originalParticleProps) {
     });
 
     button.addEventListener("mouseleave", () => {
-      // Kill hover timelines
       particleTimelines.forEach(tl => tl.kill());
       particleTimelines = [];
 
       particles.forEach((particle, index) => {
-        const originalProps = originalParticleProps[index];
-        
-        // Create smooth exit timeline
         const tl = gsap.timeline();
         
         tl.to(particle, {
@@ -548,15 +500,14 @@ function addSmoothParticleEffect(particles, originalParticleProps) {
   });
 }
 
-// FIXED: Enhanced hover color function
 function getEnhancedHoverColor(index) {
   const enhancedColors = [
-    'rgba(255, 140, 0, 1)',   // Dark orange
-    'rgba(255, 215, 0, 1)',   // Gold
-    'rgba(255, 165, 0, 1)',   // Orange
-    'rgba(218, 165, 32, 1)', // Golden rod
-    'rgba(255, 69, 0, 1)',   // Red orange
-    'rgba(255, 140, 0, 1)',  // Dark orange
+    'rgba(255, 140, 0, 1)',
+    'rgba(255, 215, 0, 1)',
+    'rgba(255, 165, 0, 1)',
+    'rgba(218, 165, 32, 1)',
+    'rgba(255, 69, 0, 1)',
+    'rgba(255, 140, 0, 1)',
   ];
   
   return enhancedColors[index % enhancedColors.length];
@@ -614,17 +565,14 @@ function initStatsAnimations(heroData) {
   });
 }
 
-// Continuous idle animation for stats
 function startStatsIdleAnimation() {
   const stats = document.querySelectorAll(".hero-stat");
   
   stats.forEach((stat, index) => {
-    // Different animation parameters for each stat
-    const delay = index * 0.8; // Stagger the start times
-    const duration = 3 + (index * 0.5); // Different durations
-    const yMovement = 8 + (index * 2); // Different movement amounts
+    const delay = index * 0.8;
+    const duration = 3 + (index * 0.5);
+    const yMovement = 8 + (index * 2);
     
-    // Continuous floating animation
     gsap.to(stat, {
       y: `+=${yMovement}`,
       duration: duration,
@@ -634,7 +582,6 @@ function startStatsIdleAnimation() {
       delay: delay,
     });
     
-    // Subtle scale pulse
     gsap.to(stat, {
       scale: 1.05,
       duration: duration * 1.5,
@@ -644,7 +591,6 @@ function startStatsIdleAnimation() {
       delay: delay + 0.5,
     });
     
-    // Rotation wobble
     gsap.to(stat, {
       rotation: index % 2 === 0 ? 2 : -2,
       duration: duration * 2,
@@ -655,7 +601,6 @@ function startStatsIdleAnimation() {
     });
   });
   
-  // Add hover effects that temporarily override idle animation
   stats.forEach((stat) => {
     stat.addEventListener("mouseenter", () => {
       gsap.to(stat, {
@@ -664,18 +609,16 @@ function startStatsIdleAnimation() {
         rotation: 0,
         duration: 0.3,
         ease: "power2.out",
-        overwrite: true, // Override idle animations
+        overwrite: true,
       });
     });
     
     stat.addEventListener("mouseleave", () => {
-      // Resume idle animation
       gsap.to(stat, {
         scale: 1,
         duration: 0.3,
         ease: "power2.out",
         onComplete: () => {
-          // Restart idle animations
           const index = Array.from(stats).indexOf(stat);
           const duration = 3 + (index * 0.5);
           const yMovement = 8 + (index * 2);

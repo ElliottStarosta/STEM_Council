@@ -29,6 +29,7 @@ function initHeader() {
     duration: 1.2,
     y: 0,
     ease: "power4.out",
+    delay: 0.4,
   })
     .from(
       ".logo-main",

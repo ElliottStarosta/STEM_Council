@@ -31,7 +31,7 @@
 }
 
 .about-mission-content {
-  transform: translateY(50px);
+  transform: none !important;
   opacity: 0;
   will-change: transform, opacity;
 }
@@ -100,7 +100,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transform: translateX(40px);
+  transform: none !important;
   opacity: 0;
   will-change: transform, opacity;
   position: relative;
