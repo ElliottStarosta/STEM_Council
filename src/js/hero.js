@@ -13,8 +13,8 @@ async function initHero() {
   initStatsAnimations(heroData);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initHero);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initHero);
 } else {
   initHero();
 }
@@ -22,33 +22,35 @@ if (document.readyState === 'loading') {
 // Load hero content from JSON
 async function loadHeroContent() {
   try {
-    console.log('Loading hero content...');
-    
-    if (typeof ContentLoader === 'undefined') {
-      console.error('ContentLoader is not available - waiting for it to load...');
-      await new Promise(resolve => setTimeout(resolve, 100));
-      if (typeof ContentLoader === 'undefined') {
-        console.error('ContentLoader still not available after waiting');
+    console.log("Loading hero content...");
+
+    if (typeof ContentLoader === "undefined") {
+      console.error(
+        "ContentLoader is not available - waiting for it to load..."
+      );
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (typeof ContentLoader === "undefined") {
+        console.error("ContentLoader still not available after waiting");
         return null;
       }
     }
-    
-    const heroData = await ContentLoader.fetchJSON('/src/content/hero.json');
-    console.log('Hero data loaded:', heroData);
-    
+
+    const heroData = await ContentLoader.fetchJSON("/src/content/hero.json");
+    console.log("Hero data loaded:", heroData);
+
     if (!heroData) {
-      console.warn('Failed to load hero content, using default values');
+      console.warn("Failed to load hero content, using default values");
       return null;
     }
 
     // Update description
-    const descriptionElement = document.querySelector('.hero-description p');
+    const descriptionElement = document.querySelector(".hero-description p");
     if (descriptionElement) {
       descriptionElement.textContent = heroData.description;
     }
 
     // Update adjectives
-    const adjectiveElements = document.querySelectorAll('.adjective');
+    const adjectiveElements = document.querySelectorAll(".adjective");
     if (heroData.adjectives && heroData.adjectives.length >= 3) {
       heroData.adjectives.forEach((adj, index) => {
         if (adjectiveElements[index]) {
@@ -58,29 +60,36 @@ async function loadHeroContent() {
     }
 
     // Update stats
-    const statElements = document.querySelectorAll('.hero-stat');
+    const statElements = document.querySelectorAll(".hero-stat");
     if (heroData.stats && heroData.stats.length >= 3) {
       heroData.stats.forEach((stat, index) => {
         if (statElements[index]) {
-          const numberElement = statElements[index].querySelector('.hero-stat-number');
-          const labelElement = statElements[index].querySelector('.hero-stat-label');
-          
+          const numberElement =
+            statElements[index].querySelector(".hero-stat-number");
+          const labelElement =
+            statElements[index].querySelector(".hero-stat-label");
+
           if (numberElement) numberElement.textContent = stat.number;
           if (labelElement) labelElement.textContent = stat.label;
         }
       });
     }
-    
+
     return heroData;
   } catch (error) {
-    console.error('Error loading hero content:', error);
+    console.error("Error loading hero content:", error);
     return null;
   }
 }
 
 // Main hero animation function
 function initHeroAnimations() {
-  document.body.classList.add('loaded');
+  document.body.classList.add("loaded");
+
+  const adjectives = document.querySelectorAll(".adjective");
+  adjectives.forEach((adj) => {
+    adj.style.animationPlayState = "paused";
+  });
 
   // Set initial states to prevent FOUC (Flash of Unstyled Content)
   gsap.set(".adjective", {
@@ -91,13 +100,14 @@ function initHeroAnimations() {
   gsap.set(".hero-btn", { x: 40, opacity: 0 });
   gsap.set(".hero-bg-circle", { scale: 0, opacity: 0 });
 
-  
-
-
   // Create master timeline
   const tl = gsap.timeline({
     onComplete: () => {
       document.querySelector(".hero").classList.add("hero-loaded");
+      // RESUME CSS ANIMATIONS after GSAP is done
+      adjectives.forEach((adj) => {
+        adj.style.animationPlayState = "running";
+      });
     },
   });
 
@@ -116,8 +126,6 @@ function initHeroAnimations() {
       });
     },
   })
-
-
 
     // Animate description
     .to(
@@ -155,9 +163,7 @@ function initHeroAnimations() {
         ease: "back.out(1.7)",
       },
       "-=1.2"
-    )
-
-    
+    );
 
   // Scroll-triggered animations for re-entry
   ScrollTrigger.create({
@@ -279,8 +285,6 @@ function initButtonInteractions() {
   });
 }
 
-
-
 // Enhanced ripple effect
 function createRippleEffect(button, event) {
   const ripple = document.createElement("div");
@@ -362,7 +366,7 @@ function debounce(func, wait) {
 // COMPLETELY FIXED PARTICLE ANIMATION SYSTEM
 function initParticlesAnimation() {
   const particles = document.querySelectorAll(".particle");
-  
+
   if (particles.length === 0) {
     console.warn("No particles found");
     return;
@@ -370,27 +374,27 @@ function initParticlesAnimation() {
 
   // Store original particle properties
   const originalParticleProps = [];
-  
+
   particles.forEach((particle, index) => {
     const computedStyles = window.getComputedStyle(particle);
-    
+
     originalParticleProps.push({
-      color: 'rgba(255, 255, 255, 0.6)',
+      color: "rgba(255, 255, 255, 0.6)",
       scale: 1,
       opacity: 0.6,
-      transform: particle.style.transform || '',
-      backgroundColor: particle.style.backgroundColor || '',
-      borderColor: particle.style.borderColor || ''
+      transform: particle.style.transform || "",
+      backgroundColor: particle.style.backgroundColor || "",
+      borderColor: particle.style.borderColor || "",
     });
-    
+
     // Set initial particle styling to ensure they're visible
-    particle.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
-    particle.style.border = '1px solid rgba(255, 255, 255, 0.3)';
-    particle.style.borderRadius = '50%';
-    particle.style.width = '8px';
-    particle.style.height = '8px';
-    particle.style.position = 'absolute';
-    particle.style.transition = 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    particle.style.backgroundColor = "rgba(255, 255, 255, 0.6)";
+    particle.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+    particle.style.borderRadius = "50%";
+    particle.style.width = "8px";
+    particle.style.height = "8px";
+    particle.style.position = "absolute";
+    particle.style.transition = "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
   });
 
   // Set initial GSAP state for particles
@@ -477,15 +481,15 @@ function addSmoothParticleEffect(particles, originalParticleProps) {
   buttons.forEach((button) => {
     button.addEventListener("mouseenter", () => {
       // Kill any existing timelines
-      particleTimelines.forEach(tl => tl.kill());
+      particleTimelines.forEach((tl) => tl.kill());
       particleTimelines = [];
 
       particles.forEach((particle, index) => {
         const hoverColor = getEnhancedHoverColor(index);
-        
+
         // Create smooth timeline for each particle
         const tl = gsap.timeline();
-        
+
         // FIXED: Use GSAP for everything, including color changes
         tl.to(particle, {
           scale: 3, // MUCH BIGGER - This will definitely show
@@ -494,52 +498,59 @@ function addSmoothParticleEffect(particles, originalParticleProps) {
           ease: "power2.out",
           delay: index * 0.03, // Smooth stagger
         })
-        .to(particle, {
-          backgroundColor: hoverColor,
-          borderColor: hoverColor,
-          duration: 0.4,
-          ease: "power2.out",
-        }, "-=0.4")
-        .to(particle, {
-          rotation: (index % 2 === 0 ? 20 : -20),
-          duration: 0.6,
-          ease: "power2.inOut",
-        }, "-=0.5")
-        .set(particle, {
-          boxShadow: `0 0 25px ${hoverColor}, 0 0 50px ${hoverColor}`,
-          filter: 'brightness(1.4) saturate(1.8)',
-        });
-        
+          .to(
+            particle,
+            {
+              backgroundColor: hoverColor,
+              borderColor: hoverColor,
+              duration: 0.4,
+              ease: "power2.out",
+            },
+            "-=0.4"
+          )
+          .to(
+            particle,
+            {
+              rotation: index % 2 === 0 ? 20 : -20,
+              duration: 0.6,
+              ease: "power2.inOut",
+            },
+            "-=0.5"
+          )
+          .set(particle, {
+            boxShadow: `0 0 25px ${hoverColor}, 0 0 50px ${hoverColor}`,
+            filter: "brightness(1.4) saturate(1.8)",
+          });
+
         particleTimelines.push(tl);
       });
     });
 
     button.addEventListener("mouseleave", () => {
       // Kill hover timelines
-      particleTimelines.forEach(tl => tl.kill());
+      particleTimelines.forEach((tl) => tl.kill());
       particleTimelines = [];
 
       particles.forEach((particle, index) => {
         const originalProps = originalParticleProps[index];
-        
+
         // Create smooth exit timeline
         const tl = gsap.timeline();
-        
+
         tl.to(particle, {
           scale: 1,
           opacity: 0.6,
-          backgroundColor: 'rgba(255, 255, 255, 0.6)',
-          borderColor: 'rgba(255, 255, 255, 0.3)',
+          backgroundColor: "rgba(255, 255, 255, 0.6)",
+          borderColor: "rgba(255, 255, 255, 0.3)",
           rotation: 0,
           duration: 0.6,
           ease: "power2.out",
           delay: index * 0.02,
-        })
-        .set(particle, {
-          boxShadow: 'none',
-          filter: 'none',
+        }).set(particle, {
+          boxShadow: "none",
+          filter: "none",
         });
-        
+
         particleTimelines.push(tl);
       });
     });
@@ -549,20 +560,20 @@ function addSmoothParticleEffect(particles, originalParticleProps) {
 // FIXED: Enhanced hover color function
 function getEnhancedHoverColor(index) {
   const enhancedColors = [
-    'rgba(255, 140, 0, 1)',   // Dark orange
-    'rgba(255, 215, 0, 1)',   // Gold
-    'rgba(255, 165, 0, 1)',   // Orange
-    'rgba(218, 165, 32, 1)', // Golden rod
-    'rgba(255, 69, 0, 1)',   // Red orange
-    'rgba(255, 140, 0, 1)',  // Dark orange
+    "rgba(255, 140, 0, 1)", // Dark orange
+    "rgba(255, 215, 0, 1)", // Gold
+    "rgba(255, 165, 0, 1)", // Orange
+    "rgba(218, 165, 32, 1)", // Golden rod
+    "rgba(255, 69, 0, 1)", // Red orange
+    "rgba(255, 140, 0, 1)", // Dark orange
   ];
-  
+
   return enhancedColors[index % enhancedColors.length];
 }
 
 function initStatsAnimations(heroData) {
   const stats = document.querySelectorAll(".hero-stat");
-  
+
   gsap.set(stats, {
     scale: 0,
     opacity: 0,
@@ -579,15 +590,15 @@ function initStatsAnimations(heroData) {
     delay: 1.8,
     onComplete: () => {
       startStatsIdleAnimation();
-    }
+    },
   });
 
   stats.forEach((stat, index) => {
     const numberElement = stat.querySelector(".hero-stat-number");
     if (!numberElement) return;
-    
+
     let finalNumber, isPlus;
-    
+
     if (heroData && heroData.stats && heroData.stats[index]) {
       const statData = heroData.stats[index].number;
       finalNumber = statData.replace("+", "");
@@ -596,18 +607,18 @@ function initStatsAnimations(heroData) {
       finalNumber = numberElement.textContent.replace("+", "");
       isPlus = numberElement.textContent.includes("+");
     }
-    
+
     const counter = { value: 0 };
-    
+
     gsap.to(counter, {
       value: parseInt(finalNumber),
       duration: 2,
-      delay: 2 + (index * 0.2),
+      delay: 2 + index * 0.2,
       ease: "power2.out",
       onUpdate: () => {
         const currentValue = Math.round(counter.value);
         numberElement.textContent = currentValue + (isPlus ? "+" : "");
-      }
+      },
     });
   });
 }
@@ -615,13 +626,13 @@ function initStatsAnimations(heroData) {
 // Continuous idle animation for stats
 function startStatsIdleAnimation() {
   const stats = document.querySelectorAll(".hero-stat");
-  
+
   stats.forEach((stat, index) => {
     // Different animation parameters for each stat
     const delay = index * 0.8; // Stagger the start times
-    const duration = 3 + (index * 0.5); // Different durations
-    const yMovement = 8 + (index * 2); // Different movement amounts
-    
+    const duration = 3 + index * 0.5; // Different durations
+    const yMovement = 8 + index * 2; // Different movement amounts
+
     // Continuous floating animation
     gsap.to(stat, {
       y: `+=${yMovement}`,
@@ -631,7 +642,7 @@ function startStatsIdleAnimation() {
       ease: "sine.inOut",
       delay: delay,
     });
-    
+
     // Subtle scale pulse
     gsap.to(stat, {
       scale: 1.05,
@@ -641,7 +652,7 @@ function startStatsIdleAnimation() {
       ease: "sine.inOut",
       delay: delay + 0.5,
     });
-    
+
     // Rotation wobble
     gsap.to(stat, {
       rotation: index % 2 === 0 ? 2 : -2,
@@ -652,7 +663,7 @@ function startStatsIdleAnimation() {
       delay: delay + 1,
     });
   });
-  
+
   // Add hover effects that temporarily override idle animation
   stats.forEach((stat) => {
     stat.addEventListener("mouseenter", () => {
@@ -665,7 +676,7 @@ function startStatsIdleAnimation() {
         overwrite: true, // Override idle animations
       });
     });
-    
+
     stat.addEventListener("mouseleave", () => {
       // Resume idle animation
       gsap.to(stat, {
@@ -675,9 +686,9 @@ function startStatsIdleAnimation() {
         onComplete: () => {
           // Restart idle animations
           const index = Array.from(stats).indexOf(stat);
-          const duration = 3 + (index * 0.5);
-          const yMovement = 8 + (index * 2);
-          
+          const duration = 3 + index * 0.5;
+          const yMovement = 8 + index * 2;
+
           gsap.to(stat, {
             y: `+=${yMovement}`,
             duration: duration,
@@ -685,7 +696,7 @@ function startStatsIdleAnimation() {
             yoyo: true,
             ease: "sine.inOut",
           });
-          
+
           gsap.to(stat, {
             scale: 1.05,
             duration: duration * 1.5,
@@ -693,7 +704,7 @@ function startStatsIdleAnimation() {
             yoyo: true,
             ease: "sine.inOut",
           });
-          
+
           gsap.to(stat, {
             rotation: index % 2 === 0 ? 2 : -2,
             duration: duration * 2,
@@ -701,7 +712,7 @@ function startStatsIdleAnimation() {
             yoyo: true,
             ease: "sine.inOut",
           });
-        }
+        },
       });
     });
   });
