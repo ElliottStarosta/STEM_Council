@@ -105,13 +105,17 @@ function initIframeIntegration() {
 }
 
 // Toggle edit mode
+// Toggle edit mode
 elements.editModeToggle.addEventListener("click", () => {
   adminState.editMode = !adminState.editMode;
   elements.editModeToggle.classList.toggle("active");
 
   if (adminState.editMode) {
-    scanEditableContent();
-    scanMarkdownContent();
+    // Wait a bit for iframe to be fully rendered
+    setTimeout(() => {
+      scanEditableContent();
+      scanMarkdownContent();
+    }, 500); // Give time for dynamic content to load
   } else {
     clearEditableHighlights();
   }
@@ -153,25 +157,35 @@ function scanEditableContent() {
 function scanMarkdownContent() {
   try {
     const iframeDoc = elements.siteIframe.contentDocument;
-    if (!iframeDoc) return;
+    if (!iframeDoc) {
+      console.error('Cannot access iframe document');
+      return;
+    }
+
+    console.log('Scanning markdown content...');
 
     // Scan for club cards
     const clubCards = iframeDoc.querySelectorAll('.club-card');
+    console.log('Found club cards:', clubCards.length);
     clubCards.forEach((card) => {
       createMarkdownEditOverlay(card, 'club');
     });
 
     // Scan for event cards
     const eventCards = iframeDoc.querySelectorAll('.event-card');
+    console.log('Found event cards:', eventCards.length);
     eventCards.forEach((card) => {
       createMarkdownEditOverlay(card, 'event');
     });
 
     // Scan for resource cards
     const resourceCards = iframeDoc.querySelectorAll('.resource-card');
+    console.log('Found resource cards:', resourceCards.length);
     resourceCards.forEach((card) => {
       createMarkdownEditOverlay(card, 'resource');
     });
+
+    console.log('Total markdown overlays created:', adminState.editableRegions.filter(r => r.type === 'markdown').length);
 
     // Add "Add New" buttons for each section
     createAddButtons(iframeDoc);
@@ -469,12 +483,15 @@ function openMarkdownCreateModal(type) {
 // Update highlight positions on scroll
 function updateHighlightPositions() {
   try {
-    adminState.editableRegions.forEach(({ element, highlight }) => {
+    adminState.editableRegions.forEach(({ element, highlight, overlay }) => {
       const rect = element.getBoundingClientRect();
-      highlight.style.top = rect.top + 15 + "px"; // 53px = toolbar height
-      highlight.style.left = rect.left + "px";
-      highlight.style.width = rect.width + "px";
-      highlight.style.height = rect.height + "px";
+      const target = highlight || overlay;
+      if (target) {
+        target.style.top = rect.top + 15 + "px";
+        target.style.left = rect.left + "px";
+        target.style.width = rect.width + "px";
+        target.style.height = rect.height + "px";
+      }
     });
   } catch (e) {
     console.error("Error updating positions:", e);
@@ -774,4 +791,20 @@ window.addTagInput = function() {
     </div>
   `;
   container.insertAdjacentHTML('beforeend', html);
+};
+
+
+window.debugAdmin = function() {
+  console.log('Edit Mode:', adminState.editMode);
+  console.log('Editable Regions:', adminState.editableRegions);
+  
+  const iframeDoc = elements.siteIframe.contentDocument;
+  if (iframeDoc) {
+    console.log('Club cards found:', iframeDoc.querySelectorAll('.club-card').length);
+    console.log('Event cards found:', iframeDoc.querySelectorAll('.event-card').length);
+    console.log('Resource cards found:', iframeDoc.querySelectorAll('.resource-card').length);
+  }
+  
+  console.log('Overlays in edit overlay:', document.querySelectorAll('.markdown-edit-overlay').length);
+  console.log('Add buttons:', document.querySelectorAll('.add-markdown-btn').length);
 };

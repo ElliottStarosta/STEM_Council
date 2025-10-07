@@ -35,7 +35,6 @@ body {
   gap: var(--spacing-lg, 20px);
   z-index: var(--z-sticky, 100);
   box-shadow: 0 4px 12px rgba(36, 126, 12, 0.1);
-  
 }
 
 .toolbar-left {
@@ -223,97 +222,18 @@ body {
 }
 
 /* ==========================================
-   Edit Overlay
+   Edit Overlay - FIXED
    ========================================== */
 .edit-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: var(--z-dropdown, 50);
+  z-index: 9998;
   top: 60px;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.markdown-edit-overlay {
-  position: fixed;
-  border: 2px dashed #42a64c;
-  pointer-events: all;
-  z-index: 9999;
-  transition: all 0.2s ease;
-}
-
-.markdown-edit-buttons {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  display: flex;
-  gap: 8px;
-}
-
-.markdown-btn {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s;
-}
-
-.markdown-btn.edit-btn {
-  background: #42a64c;
-  color: white;
-}
-
-.markdown-btn.delete-btn {
-  background: #dc3545;
-  color: white;
-}
-
-.add-markdown-btn {
-  position: fixed;
-  padding: 12px 24px;
-  background: #42a64c;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 9999;
-  transition: all 0.3s;
-}
-
-.social-link-group,
-.image-input-group,
-.tag-input-group {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.remove-link-btn {
-  padding: 8px 12px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.add-link-btn {
-  margin-top: 8px;
-  padding: 8px 16px;
-  background: #42a64c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-
+/* Regular Editable Highlights (for JSON content) */
 .editable-highlight {
   position: absolute;
   border: 2px dashed var(--accent-light-green, #42a64c);
@@ -359,6 +279,163 @@ body {
 }
 
 /* ==========================================
+   Markdown Edit Overlays
+   ========================================== */
+.markdown-edit-overlay {
+  position: fixed;
+  border: 2px dashed #42a64c;
+  background: rgba(66, 166, 76, 0.1);
+  pointer-events: all;
+  z-index: 9999;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.markdown-edit-overlay:hover {
+  background: rgba(66, 166, 76, 0.2);
+  border-color: #247e0c;
+  border-style: solid;
+  box-shadow: 0 0 20px rgba(36, 126, 12, 0.4);
+}
+
+.markdown-edit-buttons {
+  position: absolute;
+  top: -45px;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: auto;
+}
+
+.markdown-edit-overlay:hover .markdown-edit-buttons {
+  opacity: 1;
+}
+
+.markdown-btn {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  min-width: 40px;
+  height: 40px;
+}
+
+.markdown-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.markdown-btn.edit-btn {
+  background: #42a64c;
+  color: white;
+}
+
+.markdown-btn.edit-btn:hover {
+  background: #247e0c;
+}
+
+.markdown-btn.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.markdown-btn.delete-btn:hover {
+  background: #a71d2a;
+}
+
+/* ==========================================
+   Add New Buttons
+   ========================================== */
+.add-markdown-btn {
+  position: fixed;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #42a64c 0%, #247e0c 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 9999;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(36, 126, 12, 0.4);
+  pointer-events: auto;
+}
+
+.add-markdown-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(36, 126, 12, 0.6);
+  background: linear-gradient(135deg, #247e0c 0%, #1a5c09 100%);
+}
+
+.add-markdown-btn i {
+  font-size: 18px;
+}
+
+/* ==========================================
+   Form Input Groups
+   ========================================== */
+.social-link-group,
+.image-input-group,
+.tag-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.social-link-group .form-input,
+.image-input-group .form-input,
+.tag-input-group .form-input {
+  flex: 1;
+}
+
+.remove-link-btn {
+  padding: 8px 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.remove-link-btn:hover {
+  background: #a71d2a;
+  transform: scale(1.05);
+}
+
+.add-link-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: #42a64c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
+.add-link-btn:hover {
+  background: #247e0c;
+  transform: translateY(-1px);
+}
+
+/* ==========================================
    Edit Modal
    ========================================== */
 .edit-modal {
@@ -369,7 +446,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal, 200);
+  z-index: 10000;
   opacity: 0;
   visibility: hidden;
   transition: var(--transition-smooth, 0.3s ease);
@@ -461,7 +538,8 @@ body {
 }
 
 .form-input,
-.form-textarea {
+.form-textarea,
+select.form-input {
   width: 100%;
   padding: var(--spacing-sm, 12px);
   background: rgba(255, 255, 255, 0.05);
@@ -480,11 +558,17 @@ body {
 }
 
 .form-input:focus,
-.form-textarea:focus {
+.form-textarea:focus,
+select.form-input:focus {
   outline: none;
   border-color: var(--primary-green, #247e0c);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px rgba(36, 126, 12, 0.1);
+}
+
+select.form-input option {
+  background: #1a1a1a;
+  color: white;
 }
 
 .modal-actions {
@@ -511,7 +595,7 @@ body {
   align-items: center;
   gap: var(--spacing-sm, 10px);
   box-shadow: 0 8px 24px rgba(36, 126, 12, 0.3);
-  z-index: var(--z-toast, 300);
+  z-index: 10001;
   transform: translateY(100px);
   opacity: 0;
   transition: var(--transition-smooth, 0.3s ease);
@@ -572,6 +656,16 @@ body {
     width: 95%;
     padding: var(--spacing-base, 16px);
   }
+
+  .markdown-edit-buttons {
+    top: -50px;
+    flex-direction: column;
+  }
+
+  .add-markdown-btn {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -582,5 +676,11 @@ body {
   .changes-indicator {
     font-size: var(--font-size-xs, 11px);
     padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+  }
+
+  .markdown-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 8px 10px;
   }
 }
