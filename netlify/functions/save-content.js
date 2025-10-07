@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
   console.log("Token received, proceeding with save");
 
   try {
-    const { jsonChanges, markdownChanges } = JSON.parse(event.body);
+    const { jsonChanges, markdownChanges, user } = JSON.parse(event.body);
     console.log("Changes to save:", { jsonChanges, markdownChanges });
 
     const octokit = new Octokit({
@@ -40,6 +40,26 @@ exports.handler = async (event, context) => {
     const branch = "admin";
 
     console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
+
+    // Get the current branch reference
+    const { data: refData } = await octokit.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${branch}`
+    });
+    const currentCommitSha = refData.object.sha;
+
+    // Get the current commit
+    const { data: currentCommit } = await octokit.git.getCommit({
+      owner,
+      repo,
+      commit_sha: currentCommitSha
+    });
+    const currentTreeSha = currentCommit.tree.sha;
+
+    // Prepare all file changes as blobs
+    const blobs = [];
+    let changeCount = 0;
 
     // Helper function to set nested values in objects
     function setNestedValue(obj, path, value) {
@@ -67,7 +87,7 @@ exports.handler = async (event, context) => {
       current[lastPart] = value;
     }
 
-    // Handle JSON changes (existing logic)
+    // Handle JSON changes
     if (jsonChanges && jsonChanges.length > 0) {
       const fileChanges = {};
       for (const change of jsonChanges) {
@@ -79,7 +99,7 @@ exports.handler = async (event, context) => {
 
       for (const [filename, fileChangesList] of Object.entries(fileChanges)) {
         const filePath = `src/content/${filename}`;
-        console.log(`Updating ${filePath} with ${fileChangesList.length} changes`);
+        console.log(`Preparing update for ${filePath} with ${fileChangesList.length} changes`);
 
         try {
           const { data: currentFile } = await octokit.repos.getContent({
@@ -97,114 +117,104 @@ exports.handler = async (event, context) => {
             setNestedValue(content, change.field, change.value);
           }
 
-          await octokit.repos.createOrUpdateFileContents({
+          const newContent = JSON.stringify(content, null, 2);
+          
+          // Create blob for this file
+          const { data: blob } = await octokit.git.createBlob({
             owner,
             repo,
-            path: filePath,
-            message: `Admin: Update ${fileChangesList.length} field(s) in ${filename}`,
-            content: Buffer.from(JSON.stringify(content, null, 2)).toString('base64'),
-            sha: currentFile.sha,
-            branch
+            content: Buffer.from(newContent).toString('base64'),
+            encoding: 'base64'
           });
 
-          console.log(`Successfully updated: ${filePath}`);
+          blobs.push({
+            path: filePath,
+            mode: '100644',
+            type: 'blob',
+            sha: blob.sha
+          });
+
+          changeCount += fileChangesList.length;
+          console.log(`Blob created for: ${filePath}`);
         } catch (fileError) {
-          console.error(`Error updating ${filePath}:`, fileError.message);
+          console.error(`Error preparing ${filePath}:`, fileError.message);
           throw fileError;
         }
       }
     }
 
-    // Handle Markdown changes
-    if (markdownChanges) {
-      // Delete files
-      for (const filename of markdownChanges.deleted || []) {
-        const filePath = `src/content/${filename}`;
-        console.log(`Deleting ${filePath}`);
-        
-        try {
-          const { data: file } = await octokit.repos.getContent({
-            owner, 
-            repo, 
-            path: filePath, 
-            ref: branch
-          });
-          
-          await octokit.repos.deleteFile({
-            owner, 
-            repo, 
-            path: filePath,
-            message: `Admin: Delete ${filename}`,
-            sha: file.sha,
-            branch
-          });
-          
-          console.log(`Successfully deleted: ${filePath}`);
-        } catch (deleteError) {
-          console.error(`Error deleting ${filePath}:`, deleteError.message);
-          // Don't throw - continue with other operations
-        }
+    // Handle Markdown deletions
+    if (markdownChanges?.deleted && markdownChanges.deleted.length > 0) {
+      for (const filename of markdownChanges.deleted) {
+        blobs.push({
+          path: `src/content/${filename}`,
+          mode: '100644',
+          type: 'blob',
+          sha: null // null sha means delete
+        });
+        changeCount++;
+        console.log(`Marked for deletion: ${filename}`);
       }
+    }
 
-      // Update existing files
-      for (const [filename, data] of Object.entries(markdownChanges.modified || {})) {
+    // Handle Markdown updates
+    if (markdownChanges?.modified) {
+      for (const [filename, data] of Object.entries(markdownChanges.modified)) {
         const filePath = `src/content/${filename}`;
-        console.log(`Updating ${filePath}`);
+        console.log(`Preparing update for ${filePath}`);
         
-        try {
-          const { data: file } = await octokit.repos.getContent({
-            owner, 
-            repo, 
-            path: filePath, 
-            ref: branch
-          });
-          
-          const markdownContent = generateMarkdownFile(data);
-          
-          await octokit.repos.createOrUpdateFileContents({
-            owner, 
-            repo, 
-            path: filePath,
-            message: `Admin: Update ${filename}`,
-            content: Buffer.from(markdownContent).toString('base64'),
-            sha: file.sha,
-            branch
-          });
-          
-          console.log(`Successfully updated: ${filePath}`);
-        } catch (updateError) {
-          console.error(`Error updating ${filePath}:`, updateError.message);
-          throw updateError;
-        }
-      }
+        const markdownContent = generateMarkdownFile(data);
+        
+        const { data: blob } = await octokit.git.createBlob({
+          owner,
+          repo,
+          content: Buffer.from(markdownContent).toString('base64'),
+          encoding: 'base64'
+        });
 
-      // Create new files
-      for (const item of markdownChanges.created || []) {
+        blobs.push({
+          path: filePath,
+          mode: '100644',
+          type: 'blob',
+          sha: blob.sha
+        });
+
+        changeCount++;
+        console.log(`Blob created for: ${filePath}`);
+      }
+    }
+
+    // Handle Markdown creations
+    if (markdownChanges?.created && markdownChanges.created.length > 0) {
+      for (const item of markdownChanges.created) {
         const filePath = `src/content/${item.filename}`;
-        console.log(`Creating ${filePath}`);
+        console.log(`Preparing creation of ${filePath}`);
         
-        try {
-          const markdownContent = generateMarkdownFile(item.data);
-          
-          await octokit.repos.createOrUpdateFileContents({
-            owner, 
-            repo, 
-            path: filePath,
-            message: `Admin: Create ${item.filename}`,
-            content: Buffer.from(markdownContent).toString('base64'),
-            branch
-          });
-          
-          console.log(`Successfully created: ${filePath}`);
-        } catch (createError) {
-          console.error(`Error creating ${filePath}:`, createError.message);
-          throw createError;
-        }
-      }
+        const markdownContent = generateMarkdownFile(item.data);
+        
+        const { data: blob } = await octokit.git.createBlob({
+          owner,
+          repo,
+          content: Buffer.from(markdownContent).toString('base64'),
+          encoding: 'base64'
+        });
 
-      // Update index.json
+        blobs.push({
+          path: filePath,
+          mode: '100644',
+          type: 'blob',
+          sha: blob.sha
+        });
+
+        changeCount++;
+        console.log(`Blob created for: ${filePath}`);
+      }
+    }
+
+    // Update index.json
+    if (markdownChanges && (markdownChanges.deleted?.length > 0 || markdownChanges.created?.length > 0)) {
       try {
-        console.log('Updating index.json');
+        console.log('Preparing index.json update');
         const indexPath = 'src/content/index.json';
         
         const { data: indexFile } = await octokit.repos.getContent({
@@ -233,27 +243,65 @@ exports.handler = async (event, context) => {
           }
         }
         
-        await octokit.repos.createOrUpdateFileContents({
+        const { data: blob } = await octokit.git.createBlob({
           owner,
           repo,
-          path: indexPath,
-          message: 'Admin: Update content index',
           content: Buffer.from(JSON.stringify(indexContent, null, 2)).toString('base64'),
-          sha: indexFile.sha,
-          branch
+          encoding: 'base64'
         });
-        
-        console.log('Successfully updated index.json');
+
+        blobs.push({
+          path: indexPath,
+          mode: '100644',
+          type: 'blob',
+          sha: blob.sha
+        });
+
+        console.log('Blob created for index.json');
       } catch (indexError) {
-        console.error('Error updating index.json:', indexError.message);
-        // Don't throw - index update is not critical
+        console.error('Error preparing index.json:', indexError.message);
       }
     }
+
+    // Create new tree with all changes
+    const { data: newTree } = await octokit.git.createTree({
+      owner,
+      repo,
+      base_tree: currentTreeSha,
+      tree: blobs
+    });
+
+    console.log(`Created new tree with ${blobs.length} file changes`);
+
+    // Create commit with all changes
+    const commitMessage = `Admin: Batch update - ${changeCount} changes by ${user || 'admin'}`;
+    const { data: newCommit } = await octokit.git.createCommit({
+      owner,
+      repo,
+      message: commitMessage,
+      tree: newTree.sha,
+      parents: [currentCommitSha]
+    });
+
+    console.log(`Created commit: ${newCommit.sha}`);
+
+    // Update branch reference to point to new commit
+    await octokit.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${branch}`,
+      sha: newCommit.sha
+    });
+
+    console.log(`Updated branch ${branch} to new commit`);
 
     return {
       statusCode: 200,
       body: JSON.stringify({ 
-        message: "All changes saved successfully",
+        message: "All changes saved in a single commit",
+        commitSha: newCommit.sha,
+        commitMessage: commitMessage,
+        filesChanged: blobs.length,
         jsonCount: jsonChanges?.length || 0,
         markdownDeleted: markdownChanges?.deleted?.length || 0,
         markdownModified: Object.keys(markdownChanges?.modified || {}).length,
@@ -276,7 +324,6 @@ exports.handler = async (event, context) => {
 function generateMarkdownFile(data) {
   const { body, ...frontmatter } = data;
   
-  // Manually format YAML frontmatter to ensure proper formatting
   let yamlFrontmatter = '';
   
   for (const [key, value] of Object.entries(frontmatter)) {
@@ -284,11 +331,21 @@ function generateMarkdownFile(data) {
       yamlFrontmatter += `${key}:\n`;
       value.forEach(item => {
         if (typeof item === 'object' && item !== null) {
-          yamlFrontmatter += `  -`;
-          for (const [itemKey, itemValue] of Object.entries(item)) {
-            yamlFrontmatter += ` ${itemKey}: "${itemValue}"`;
+          const entries = Object.entries(item);
+          if (entries.length === 1) {
+            // Single property: - key: "value"
+            const [itemKey, itemValue] = entries[0];
+            yamlFrontmatter += `  - ${itemKey}: "${itemValue}"\n`;
+          } else {
+            // Multiple properties: first on dash line, rest indented
+            entries.forEach(([itemKey, itemValue], index) => {
+              if (index === 0) {
+                yamlFrontmatter += `  - ${itemKey}: "${itemValue}"\n`;
+              } else {
+                yamlFrontmatter += `    ${itemKey}: "${itemValue}"\n`;
+              }
+            });
           }
-          yamlFrontmatter += '\n';
         } else {
           yamlFrontmatter += `  - "${item}"\n`;
         }
