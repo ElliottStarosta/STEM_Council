@@ -294,7 +294,6 @@ window.addEventListener('load', () => {
 // Load clubs content from markdown files dynamically
 async function loadClubsContent() {
   try {
-    // Load the index file
     const index = await ContentLoader.fetchJSON('/src/content/index.json');
     
     if (!index || !index.clubs) {
@@ -307,14 +306,12 @@ async function loadClubsContent() {
 
     let clubsHTML = '';
     
-    // Load each club file from the index
     for (const filename of index.clubs) {
       const clubData = await ContentLoader.fetchMarkdown(`/src/content/clubs/${filename}`);
       
       if (clubData && clubData.frontmatter) {
         const club = clubData.frontmatter;
         
-        // Process socialLinks
         let socialLinks = [];
         if (club.socialLinks && Array.isArray(club.socialLinks)) {
           socialLinks = club.socialLinks.map(link => {
@@ -336,7 +333,7 @@ async function loadClubsContent() {
         ).join('') : '';
 
         clubsHTML += `
-          <div class="club-card" data-club="${club.name.toLowerCase().replace(/\s+/g, '-')}">
+          <div class="club-card" data-club="${club.name.toLowerCase().replace(/\s+/g, '-')}" data-markdown-file="clubs/${filename}">
             <div class="club-card-inner">
               <div class="club-icon">
                 <i class="${club.icon || 'ri-star-line'}"></i>
@@ -355,15 +352,12 @@ async function loadClubsContent() {
     
     clubsGrid.innerHTML = clubsHTML;
 
-    // Set initial GSAP states for club cards to prevent FOUC
     if (typeof gsap !== 'undefined') {
       gsap.set('.club-card', { opacity: 0, y: 40, scale: 0.95 });
     }
 
-    // Now initialize animations and interactions
     initClubsSection();
 
-    // Refresh ScrollTrigger after DOM update
     if (typeof ScrollTrigger !== 'undefined') {
       ScrollTrigger.refresh();
     }

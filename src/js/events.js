@@ -25,75 +25,75 @@ class EventsManager {
 
   // Load events from markdown files
   async loadEvents() {
-    try {
-      // Load the index file
-      const index = await ContentLoader.fetchJSON('/src/content/index.json');
-      
-      if (!index || !index.events) {
-        console.error('No events found in index');
-        eventsData = [];
-        return;
-      }
-  
-      const loadedEvents = [];
-      let eventId = 1;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-  
-      // Load each event file from the index
-      for (const filename of index.events) {
-        try {
-          const eventData = await ContentLoader.fetchMarkdown(`/src/content/events/${filename}`);
-  
-          if (eventData && eventData.frontmatter) {
-            // Check if event has already passed
-            const eventEndDate = new Date(eventData.frontmatter.endDate);
-            eventEndDate.setHours(23, 59, 59, 999);
-  
-            if (eventEndDate < today) {
-              console.log(`Skipping past event: ${eventData.frontmatter.name}`);
-              continue;
-            }
-  
-            // Handle images
-            let imagesFromFrontmatter = [];
-            if (eventData.frontmatter.images && Array.isArray(eventData.frontmatter.images)) {
-              imagesFromFrontmatter = eventData.frontmatter.images.map(img => {
-                if (typeof img === 'object' && img !== null && img.image) {
-                  return img.image;
-                }
-                return img;
-              }).filter(img => img);
-            }
-  
-            const normalizedImages = (imagesFromFrontmatter.length > 0)
-              ? imagesFromFrontmatter
-              : ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'];
-  
-            const event = {
-              id: eventId++,
-              name: eventData.frontmatter.name,
-              startDate: eventData.frontmatter.startDate,
-              endDate: eventData.frontmatter.endDate,
-              description: eventData.body,
-              images: normalizedImages,
-              filename: filename
-            };
-            loadedEvents.push(event);
-          }
-        } catch (fileError) {
-          console.error(`Error processing event file ${filename}:`, fileError);
-        }
-      }
-  
-      loadedEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-      eventsData = loadedEvents;
-      console.log(`Loaded ${eventsData.length} upcoming events dynamically:`, eventsData);
-    } catch (error) {
-      console.error('Error loading events:', error);
+  try {
+    const index = await ContentLoader.fetchJSON('/src/content/index.json');
+    
+    if (!index || !index.events) {
+      console.error('No events found in index');
       eventsData = [];
+      return;
     }
+
+    const loadedEvents = [];
+    let eventId = 1;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (const filename of index.events) {
+      try {
+        const eventData = await ContentLoader.fetchMarkdown(`/src/content/events/${filename}`);
+
+        if (eventData && eventData.frontmatter) {
+          const eventEndDate = new Date(eventData.frontmatter.endDate);
+          eventEndDate.setHours(23, 59, 59, 999);
+
+          if (eventEndDate < today) {
+            console.log(`Skipping past event: ${eventData.frontmatter.name}`);
+            continue;
+          }
+
+          let imagesFromFrontmatter = [];
+          if (eventData.frontmatter.images && Array.isArray(eventData.frontmatter.images)) {
+            imagesFromFrontmatter = eventData.frontmatter.images.map(img => {
+              if (typeof img === 'object' && img !== null && img.image) {
+                return img.image;
+              }
+              return img;
+            }).filter(img => img);
+          }
+
+          const normalizedImages = (imagesFromFrontmatter.length > 0)
+            ? imagesFromFrontmatter
+            : ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'];
+
+          const event = {
+            id: eventId++,
+            name: eventData.frontmatter.name,
+            startDate: eventData.frontmatter.startDate,
+            endDate: eventData.frontmatter.endDate,
+            description: eventData.body,
+            images: normalizedImages,
+            filename: filename
+          };
+          loadedEvents.push(event);
+        }
+      } catch (fileError) {
+        console.error(`Error processing event file ${filename}:`, fileError);
+      }
+    }
+
+    loadedEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    eventsData = loadedEvents;
+    
+    // Store globally for admin access
+    this.eventsData = eventsData;
+    
+    console.log(`Loaded ${eventsData.length} upcoming events dynamically:`, eventsData);
+  } catch (error) {
+    console.error('Error loading events:', error);
+    eventsData = [];
   }
+}
 
   // Resolve image path - handles both URLs and local paths with fallback
   resolveImagePath(imagePath) {
@@ -151,50 +151,48 @@ class EventsManager {
 
   // Render events grid
   renderEvents() {
-    const eventsGrid = document.getElementById("eventsGrid");
-    if (!eventsGrid) return;
+  const eventsGrid = document.getElementById("eventsGrid");
+  if (!eventsGrid) return;
 
-    // Check if eventsData is empty or undefined
-    if (!eventsData || eventsData.length === 0) {
-      eventsGrid.innerHTML = `
-        <div class="no-events-container">
-          <div class="no-events-icon">
-            <i class="ri-calendar-fill"></i>
-          </div>
-          <h3 class="no-events-title">No Upcoming Events</h3>
-          <p class="no-events-description">
-            We're currently planning our next exciting events. Check back soon for updates on workshops, conferences, and networking opportunities!
-          </p>
-          
+  if (!eventsData || eventsData.length === 0) {
+    eventsGrid.innerHTML = `
+      <div class="no-events-container">
+        <div class="no-events-icon">
+          <i class="ri-calendar-fill"></i>
         </div>
-      `;
-      return;
-    }
-
-    eventsGrid.innerHTML = eventsData
-      .map(
-        (event) => `
-      <div class="event-card" data-event-id="${event.id}">
-        <img src="${this.resolveImagePath((event.images && event.images[0]) || '')}" alt="${event.name
-          }" class="event-image" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
-        <div class="event-content">
-          <div class="event-date">${this.formatDate(
-            event.startDate,
-            event.endDate
-          )}</div>
-          <h3 class="event-name">${event.name}</h3>
-          <p class="event-preview">${this.getPreviewText(event.description)}</p>
-          <button class="event-view-more">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9,18 15,12 9,6"></polyline>
-            </svg>
-          </button>
-        </div>
+        <h3 class="no-events-title">No Upcoming Events</h3>
+        <p class="no-events-description">
+          We're currently planning our next exciting events. Check back soon for updates on workshops, conferences, and networking opportunities!
+        </p>
       </div>
-    `
-      )
-      .join("");
+    `;
+    return;
   }
+
+  eventsGrid.innerHTML = eventsData
+    .map(
+      (event) => `
+    <div class="event-card" data-event-id="${event.id}" data-markdown-file="${event.filename}">
+      <img src="${this.resolveImagePath((event.images && event.images[0]) || '')}" alt="${event.name
+        }" class="event-image" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
+      <div class="event-content">
+        <div class="event-date">${this.formatDate(
+          event.startDate,
+          event.endDate
+        )}</div>
+        <h3 class="event-name">${event.name}</h3>
+        <p class="event-preview">${this.getPreviewText(event.description)}</p>
+        <button class="event-view-more">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9,18 15,12 9,6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `
+    )
+    .join("");
+}
 
   // Bind event listeners
   bindEvents() {
