@@ -252,11 +252,11 @@ function createEditableHighlight(element) {
 
 function createMarkdownEditOverlay(element, type) {
   const rect = element.getBoundingClientRect();
-  const filename = element.dataset.markdownFile; // Add this attribute to HTML elements
+  const filename = element.dataset.markdownFile;
 
   const overlay = document.createElement('div');
   overlay.className = 'markdown-edit-overlay';
-  overlay.style.top = rect.top + 15 + 'px';
+  overlay.style.top = rect.top + 'px';
   overlay.style.left = rect.left + 'px';
   overlay.style.width = rect.width + 'px';
   overlay.style.height = rect.height + 'px';
@@ -370,24 +370,25 @@ function buildMarkdownForm(type, data = {}) {
     club: `
       <div class="form-group">
         <label class="form-label" for="name">Club Name</label>
-        <input class="form-input" id="name" type="text" value="${data.name || ''}" required>
+        <input class="form-input" id="name" type="text" value="${escapeHtml(data.name || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="description">Description</label>
-        <textarea class="form-textarea" id="description" rows="4" required>${data.description || ''}</textarea>
+        <textarea class="form-textarea" id="description" rows="4" required>${escapeHtml(data.description || '')}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label" for="icon">Icon (Remix Icon class)</label>
-        <input class="form-input" id="icon" type="text" value="${data.icon || 'ri-star-line'}" required>
+        <input class="form-input" id="icon" type="text" value="${escapeHtml(data.icon || 'ri-star-line')}" required placeholder="e.g. ri-code-s-slash-line">
+        <small style="color: #888; font-size: 12px;">Find icons at: <a href="https://remixicon.com" target="_blank">remixicon.com</a></small>
       </div>
       <div class="form-group">
         <label class="form-label">Social Links</label>
         <div id="socialLinks">
           ${(data.socialLinks || []).map((link, i) => `
             <div class="social-link-group" data-index="${i}">
-              <input class="form-input" placeholder="Type" value="${link.type || ''}" data-field="type">
-              <input class="form-input" placeholder="URL" value="${link.url || ''}" data-field="url">
-              <input class="form-input" placeholder="Icon" value="${link.icon || ''}" data-field="icon">
+              <input class="form-input" placeholder="Type" value="${escapeHtml(link.type || '')}" data-field="type">
+              <input class="form-input" placeholder="URL" value="${escapeHtml(link.url || '')}" data-field="url">
+              <input class="form-input" placeholder="Icon" value="${escapeHtml(link.icon || '')}" data-field="icon">
               <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
             </div>
           `).join('')}
@@ -398,7 +399,7 @@ function buildMarkdownForm(type, data = {}) {
     event: `
       <div class="form-group">
         <label class="form-label" for="name">Event Name</label>
-        <input class="form-input" id="name" type="text" value="${data.name || ''}" required>
+        <input class="form-input" id="name" type="text" value="${escapeHtml(data.name || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="startDate">Start Date</label>
@@ -413,7 +414,7 @@ function buildMarkdownForm(type, data = {}) {
         <div id="imageList">
           ${(data.images || []).map((img, i) => `
             <div class="image-input-group">
-              <input class="form-input" placeholder="Image URL" value="${img.image || img}" data-index="${i}">
+              <input class="form-input" placeholder="Image URL" value="${escapeHtml(img.image || img)}" data-index="${i}">
               <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
             </div>
           `).join('')}
@@ -422,21 +423,21 @@ function buildMarkdownForm(type, data = {}) {
       </div>
       <div class="form-group">
         <label class="form-label" for="body">Description (Markdown)</label>
-        <textarea class="form-textarea" id="body" rows="8" required>${data.body || ''}</textarea>
+        <textarea class="form-textarea" id="body" rows="8" required>${escapeHtml(data.body || '')}</textarea>
       </div>
     `,
     resource: `
       <div class="form-group">
         <label class="form-label" for="title">Resource Title</label>
-        <input class="form-input" id="title" type="text" value="${data.title || ''}" required>
+        <input class="form-input" id="title" type="text" value="${escapeHtml(data.title || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="description">Description</label>
-        <textarea class="form-textarea" id="description" rows="3" required>${data.description || ''}</textarea>
+        <textarea class="form-textarea" id="description" rows="3" required>${escapeHtml(data.description || '')}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label" for="url">URL</label>
-        <input class="form-input" id="url" type="url" value="${data.url || ''}" required>
+        <input class="form-input" id="url" type="url" value="${escapeHtml(data.url || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="type">Type</label>
@@ -452,7 +453,7 @@ function buildMarkdownForm(type, data = {}) {
         <div id="tagList">
           ${(data.tags || []).map((tag, i) => `
             <div class="tag-input-group">
-              <input class="form-input" placeholder="Tag" value="${tag.tag || tag}" data-index="${i}">
+              <input class="form-input" placeholder="Tag" value="${escapeHtml(tag.tag || tag)}" data-index="${i}">
               <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
             </div>
           `).join('')}
@@ -461,7 +462,8 @@ function buildMarkdownForm(type, data = {}) {
       </div>
       <div class="form-group">
         <label class="form-label" for="icon">Icon (Remix Icon class)</label>
-        <input class="form-input" id="icon" type="text" value="${data.icon || 'ri-star-line'}" required>
+        <input class="form-input" id="icon" type="text" value="${escapeHtml(data.icon || 'ri-star-line')}" required placeholder="e.g. ri-video-fill">
+        <small style="color: #888; font-size: 12px;">Find icons at: <a href="https://remixicon.com" target="_blank">remixicon.com</a></small>
       </div>
     `
   };
@@ -483,19 +485,38 @@ function openMarkdownCreateModal(type) {
 // Update highlight positions on scroll
 function updateHighlightPositions() {
   try {
-    adminState.editableRegions.forEach(({ element, highlight, overlay }) => {
+    adminState.editableRegions.forEach(({ element, highlight, overlay, type }) => {
       const rect = element.getBoundingClientRect();
-      const target = highlight || overlay;
-      if (target) {
-        target.style.top = rect.top + 15 + "px";
-        target.style.left = rect.left + "px";
-        target.style.width = rect.width + "px";
-        target.style.height = rect.height + "px";
+      
+      if (highlight) {
+        highlight.style.top = rect.top + 15 + "px";
+        highlight.style.left = rect.left + "px";
+        highlight.style.width = rect.width + "px";
+        highlight.style.height = rect.height + "px";
+      }
+      
+      if (overlay) {
+        overlay.style.top = rect.top + "px";
+        overlay.style.left = rect.left + "px";
+        overlay.style.width = rect.width + "px";
+        overlay.style.height = rect.height + "px";
       }
     });
   } catch (e) {
     console.error("Error updating positions:", e);
   }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.toString().replace(/[&<>"']/g, m => map[m]);
 }
 
 // Clear editable highlights
