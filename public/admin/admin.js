@@ -738,7 +738,7 @@ elements.saveBtn.addEventListener('click', async () => {
     showStatus("All changes saved successfully!", "success");
 
     setTimeout(() => {
-      window.location.href = '/build.html';
+      window.location.href = '/admin/build.html';
     }, 1000);
   } catch (error) {
     console.error("Save error:", error);
