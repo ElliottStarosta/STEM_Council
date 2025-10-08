@@ -5,6 +5,7 @@ const adminState = {
   pendingChanges: {},
   editableRegions: [],
   currentEdit: null,
+  animationFrameId: null,
   // Track markdown file operations
   markdownChanges: {
     modified: {}, // { 'clubs/arduino-club.md': { frontmatter: {...}, body: '...' } }
@@ -74,12 +75,31 @@ function initAuth() {
   });
 }
 
+
+function startPositionTracking() {
+  function updateLoop() {
+    if (adminState.editMode) {
+      updateHighlightPositions();
+      adminState.animationFrameId = requestAnimationFrame(updateLoop);
+    }
+  }
+  updateLoop();
+}
+
+function stopPositionTracking() {
+  if (adminState.animationFrameId) {
+    cancelAnimationFrame(adminState.animationFrameId);
+    adminState.animationFrameId = null;
+  }
+}
+
 // Initialize iframe integration
 function initIframeIntegration() {
   elements.siteIframe.addEventListener("load", () => {
     console.log("Site loaded in iframe");
     if (adminState.editMode) {
       scanEditableContent();
+      scanMarkdownContent();
     }
   });
 
@@ -87,7 +107,10 @@ function initIframeIntegration() {
   elements.siteIframe.addEventListener("load", () => {
     try {
       const iframeWindow = elements.siteIframe.contentWindow;
+      const iframeDoc = elements.siteIframe.contentDocument;
+      
       if (iframeWindow) {
+        // Scroll listener
         iframeWindow.addEventListener(
           "scroll",
           () => {
@@ -96,29 +119,51 @@ function initIframeIntegration() {
             }
           },
           true
-        ); // Use capture phase
+        );
+        
+        // Also listen for resize events in the iframe
+        iframeWindow.addEventListener("resize", () => {
+          if (adminState.editMode) {
+            updateHighlightPositions();
+          }
+        });
+      }
+      
+      // Watch for dynamic content loading (like images finishing load)
+      if (iframeDoc) {
+        iframeDoc.addEventListener('DOMContentLoaded', () => {
+          if (adminState.editMode) {
+            setTimeout(() => updateHighlightPositions(), 100);
+          }
+        });
+        
+        // Listen for images loading
+        iframeWindow.addEventListener('load', () => {
+          if (adminState.editMode) {
+            setTimeout(() => updateHighlightPositions(), 100);
+          }
+        });
       }
     } catch (e) {
-      console.error("Cannot attach scroll listener:", e);
+      console.error("Cannot attach listeners:", e);
     }
   });
 }
 
-// Toggle edit mode
 // Toggle edit mode
 elements.editModeToggle.addEventListener("click", () => {
   adminState.editMode = !adminState.editMode;
   elements.editModeToggle.classList.toggle("active");
 
   if (adminState.editMode) {
-    // Wait a bit for iframe to be fully rendered
     setTimeout(() => {
       scanEditableContent();
       scanMarkdownContent();
-    }, 500); // Give time for dynamic content to load
+      startPositionTracking(); // Start continuous tracking
+    }, 500);
   } else {
+    stopPositionTracking(); // Stop tracking
     clearEditableHighlights();
-    // Hide add-markdown-btn buttons if any exist
     const iframeDoc = elements.siteIframe.contentDocument;
     if (iframeDoc) {
       iframeDoc.querySelectorAll('.add-markdown-btn').forEach(btn => {
@@ -260,17 +305,19 @@ function createEditableHighlight(element) {
   highlight.className = "editable-highlight";
 
   // Position relative to viewport, accounting for iframe scroll
-  highlight.style.top = rect.top + 15 + "px"; // 53px = toolbar height
+  highlight.style.top = rect.top + 15 + "px";
   highlight.style.left = rect.left + "px";
   highlight.style.width = rect.width + "px";
   highlight.style.height = rect.height + "px";
+  highlight.style.pointerEvents = "none"; // Don't block scrolling
 
   const editBtn = document.createElement("div");
   editBtn.className = "edit-button";
   editBtn.innerHTML = '<i class="ri-edit-line"></i>';
+  editBtn.style.pointerEvents = "auto"; // Button accepts clicks
   highlight.appendChild(editBtn);
 
-  highlight.addEventListener("click", (e) => {
+  editBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     openEditModal(element);
   });
@@ -280,29 +327,38 @@ function createEditableHighlight(element) {
 }
 
 function createMarkdownEditOverlay(element, type) {
+  const iframeRect = elements.siteIframe.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
   const filename = element.dataset.markdownFile;
 
   const overlay = document.createElement('div');
   overlay.className = 'markdown-edit-overlay';
-  overlay.style.top = rect.top + 'px';
-  overlay.style.left = rect.left + 'px';
+  
+  // Add yellow class only for clubs
+  if (type === 'club') {
+    overlay.classList.add('markdown-edit-overlay-yellow');
+  }
+  
+  overlay.style.top = (rect.top + iframeRect.top) + 'px';
+  overlay.style.left = (rect.left + iframeRect.left) + 'px';
   overlay.style.width = rect.width + 'px';
   overlay.style.height = rect.height + 'px';
 
   const buttonGroup = document.createElement('div');
   buttonGroup.className = 'markdown-edit-buttons';
   
-  const editBtn = document.createElement('button');
-  editBtn.className = 'markdown-btn edit-btn';
+  // Edit button with circular style
+  const editBtn = document.createElement('div');
+  editBtn.className = 'markdown-edit-btn';
   editBtn.innerHTML = '<i class="ri-edit-line"></i>';
   editBtn.onclick = (e) => {
     e.stopPropagation();
     openMarkdownEditModal(element, type, filename);
   };
 
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'markdown-btn delete-btn';
+  // Delete button with circular style
+  const deleteBtn = document.createElement('div');
+  deleteBtn.className = 'markdown-delete-btn';
   deleteBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
   deleteBtn.onclick = (e) => {
     e.stopPropagation();
@@ -514,21 +570,25 @@ function openMarkdownCreateModal(type) {
 // Update highlight positions on scroll
 function updateHighlightPositions() {
   try {
+    const iframeRect = elements.siteIframe.getBoundingClientRect();
+    
     adminState.editableRegions.forEach(({ element, highlight, overlay, type }) => {
       const rect = element.getBoundingClientRect();
       
       if (highlight) {
-        highlight.style.top = rect.top + 15 + "px";
-        highlight.style.left = rect.left + "px";
+        highlight.style.top = (rect.top + 15) + "px";
+        highlight.style.left = (rect.left) + "px";
         highlight.style.width = rect.width + "px";
         highlight.style.height = rect.height + "px";
+        highlight.style.pointerEvents = 'none'; // Allow interaction
       }
       
       if (overlay) {
-        overlay.style.top = rect.top + "px";
-        overlay.style.left = rect.left + "px";
+        overlay.style.top = (rect.top + iframeRect.top) + "px";
+        overlay.style.left = (rect.left + iframeRect.left) + "px";
         overlay.style.width = rect.width + "px";
         overlay.style.height = rect.height + "px";
+        overlay.style.pointerEvents = 'none'; // Don't block scrolling
       }
     });
   } catch (e) {

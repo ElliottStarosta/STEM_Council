@@ -221,9 +221,7 @@ body {
   background: var(--white, white);
 }
 
-/* ==========================================
-   Edit Overlay - FIXED
-   ========================================== */
+
 .edit-overlay {
   position: fixed;
   inset: 0;
@@ -281,75 +279,85 @@ body {
 /* ==========================================
    Markdown Edit Overlays
    ========================================== */
+/* Markdown Edit Overlays */
 .markdown-edit-overlay {
   position: fixed;
   border: 2px dashed #42a64c;
-  background: rgba(66, 166, 76, 0.1);
-  pointer-events: all;
+  background: rgba(66, 166, 143, 0.08);
+  pointer-events: none; /* Don't block scroll */
   z-index: 9999;
   transition: all 0.2s ease;
-  cursor: pointer;
   border-radius: 4px;
 }
 
 .markdown-edit-overlay:hover {
-  background: rgba(66, 166, 76, 0.2);
+  background: rgba(66, 166, 76, 0.15);
   border-color: #247e0c;
   border-style: solid;
-  box-shadow: 0 0 20px rgba(36, 126, 12, 0.4);
+  box-shadow: 0 0 20px rgba(36, 126, 12, 0.3);
+}
+
+.markdown-edit-overlay-yellow {
+  border: 2px dashed #cdb82d;
+  background: rgba(205, 184, 45, 0.08);
+}
+
+.markdown-edit-overlay-yellow:hover {
+  background: rgba(205, 184, 45, 0.15);
+  border-color: #b8a428;
+  border-style: solid;
+  box-shadow: 0 0 20px rgba(205, 184, 45, 0.3);
 }
 
 .markdown-edit-buttons {
   position: absolute;
-  top: -45px;
-  right: 0;
+  top: -15px;
+  right: -15px;
   display: flex;
   gap: 8px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: auto;
+    pointer-events: auto !important;
 }
 
-.markdown-edit-overlay:hover .markdown-edit-buttons {
-  opacity: 1;
+.markdown-edit-buttons * {
+  pointer-events: auto !important;
 }
 
-.markdown-btn {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s;
+.markdown-edit-btn,
+.markdown-delete-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  min-width: 40px;
-  height: 40px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
 }
 
-.markdown-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.markdown-btn.edit-btn {
-  background: #42a64c;
-  color: white;
-}
-
-.markdown-btn.edit-btn:hover {
+.markdown-edit-btn {
   background: #247e0c;
 }
 
-.markdown-btn.delete-btn {
-  background: #dc3545;
-  color: white;
+.markdown-edit-btn:hover {
+  transform: scale(1.1) rotate(15deg);
+  background: #42a64c;
 }
 
-.markdown-btn.delete-btn:hover {
-  background: #a71d2a;
+.markdown-delete-btn {
+  background: #dc3545;
+}
+
+.markdown-delete-btn:hover {
+  transform: scale(1.1) rotate(15deg);
+  background: #ff4757;
+}
+
+.markdown-edit-btn i,
+.markdown-delete-btn i {
+  color: white;
+  font-size: 14px;
 }
 
 /* ==========================================
