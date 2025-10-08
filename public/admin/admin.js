@@ -118,6 +118,13 @@ elements.editModeToggle.addEventListener("click", () => {
     }, 500); // Give time for dynamic content to load
   } else {
     clearEditableHighlights();
+    // Hide add-markdown-btn buttons if any exist
+    const iframeDoc = elements.siteIframe.contentDocument;
+    if (iframeDoc) {
+      iframeDoc.querySelectorAll('.add-markdown-btn').forEach(btn => {
+        btn.style.display = 'none';
+      });
+    }
   }
 });
 
@@ -205,15 +212,21 @@ function createAddButtons(iframeDoc) {
     const container = iframeDoc.querySelector(selector);
     if (!container) return;
 
-    // Remove any previous add button
-    const oldBtn = container.querySelector('.add-markdown-btn');
-    if (oldBtn) oldBtn.remove();
+    // Remove any previous add button (now checks after the grid)
+    if (container.nextSibling && container.nextSibling.classList && container.nextSibling.classList.contains('add-markdown-btn')) {
+      container.nextSibling.remove();
+    }
 
     const addBtn = iframeDoc.createElement('button');
     addBtn.className = 'add-markdown-btn';
-    addBtn.innerHTML = `<i class="ri-add-line"></i> ${label}`;
-    addBtn.style.display = 'block';
-    addBtn.style.margin = '24px auto 0 auto';
+    addBtn.innerHTML = `<i class=\"ri-add-line\"></i> ${label}`;
+    addBtn.style.display = adminState.editMode ? 'block' : 'none';
+    // Add extra margin-bottom for resource button
+    if (type === 'resource') {
+      addBtn.style.margin = '24px auto 30px';
+    } else {
+      addBtn.style.margin = '24px auto 0 auto';
+    }
     addBtn.style.width = 'fit-content';
     addBtn.style.padding = '10px 20px';
     addBtn.style.fontSize = '1rem';
@@ -229,7 +242,10 @@ function createAddButtons(iframeDoc) {
       window.parent.openMarkdownCreateModal(type);
     };
 
-    container.appendChild(addBtn);
+    // Insert the button after the grid container
+    if (container.parentNode) {
+      container.parentNode.insertBefore(addBtn, container.nextSibling);
+    }
   });
 }
 
