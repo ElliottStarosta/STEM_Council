@@ -635,16 +635,20 @@ function collectFormData(type) {
 
 function deleteMarkdownFile(filename, type) {
   if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
-  
-  adminState.markdownChanges.deleted.push(filename);
-  
+
+  let fileToDelete = filename;
+  if (type === 'event' && !filename.startsWith('events/')) {
+    fileToDelete = `events/${filename}`;
+  }
+  adminState.markdownChanges.deleted.push(fileToDelete);
+  console.log("Marked for deletion:", fileToDelete);
   // Remove from UI
   const element = adminState.editableRegions.find(r => r.element.dataset.markdownFile === filename);
   if (element) {
     element.element.style.opacity = '0.3';
     element.element.style.pointerEvents = 'none';
   }
-  
+
   updateChangesUI();
   showStatus(`${type} marked for deletion. Click "Save Changes" to commit.`, 'success');
 }
