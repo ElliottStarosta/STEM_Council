@@ -143,17 +143,34 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // Handle Markdown deletions
+    // Handle Markdown deletions with existence check
     if (markdownChanges?.deleted && markdownChanges.deleted.length > 0) {
       for (const filename of markdownChanges.deleted) {
-        blobs.push({
-          path: `src/content/${filename}`,
-          mode: '100644',
-          type: 'blob',
-          sha: null // null sha means delete
-        });
-        changeCount++;
-        console.log(`Marked for deletion: ${filename}`);
+        const filePath = `src/content/${filename}`;
+        try {
+          // Check if file exists before marking for deletion
+          await octokit.repos.getContent({
+            owner,
+            repo,
+            path: filePath,
+            ref: branch
+          });
+          blobs.push({
+            path: filePath,
+            mode: '100644',
+            type: 'blob',
+            sha: null // null sha means delete
+          });
+          changeCount++;
+          console.log(`Marked for deletion: ${filename}`);
+        } catch (err) {
+          if (err.status === 404) {
+            console.warn(`File not found for deletion: ${filename}, skipping.`);
+          } else {
+            console.error(`Error checking file existence for deletion: ${filename}`, err.message);
+            throw err;
+          }
+        }
       }
     }
 
