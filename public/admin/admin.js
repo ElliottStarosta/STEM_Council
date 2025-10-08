@@ -205,18 +205,31 @@ function createAddButtons(iframeDoc) {
     const container = iframeDoc.querySelector(selector);
     if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    
-    const addBtn = document.createElement('button');
+    // Remove any previous add button
+    const oldBtn = container.querySelector('.add-markdown-btn');
+    if (oldBtn) oldBtn.remove();
+
+    const addBtn = iframeDoc.createElement('button');
     addBtn.className = 'add-markdown-btn';
     addBtn.innerHTML = `<i class="ri-add-line"></i> ${label}`;
-    addBtn.style.position = 'fixed';
-    addBtn.style.top = (rect.bottom + 10) + 'px';
-    addBtn.style.left = rect.left + 'px';
-    
-    addBtn.onclick = () => openMarkdownCreateModal(type);
-    
-    elements.editOverlay.appendChild(addBtn);
+    addBtn.style.display = 'block';
+    addBtn.style.margin = '24px auto 0 auto';
+    addBtn.style.width = 'fit-content';
+    addBtn.style.padding = '10px 20px';
+    addBtn.style.fontSize = '1rem';
+    addBtn.style.background = '#2e7d32';
+    addBtn.style.color = '#fff';
+    addBtn.style.border = 'none';
+    addBtn.style.borderRadius = '6px';
+    addBtn.style.cursor = 'pointer';
+    addBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+
+    addBtn.onclick = function(e) {
+      e.stopPropagation();
+      window.parent.openMarkdownCreateModal(type);
+    };
+
+    container.appendChild(addBtn);
   });
 }
 
