@@ -257,35 +257,53 @@ function createAddButtons(iframeDoc) {
     const container = iframeDoc.querySelector(selector);
     if (!container) return;
 
-    // Remove any previous add button (now checks after the grid)
-    if (container.nextSibling && container.nextSibling.classList && container.nextSibling.classList.contains('add-markdown-btn')) {
-      container.nextSibling.remove();
+    // Remove any previous add button
+    const existingBtn = container.parentNode?.querySelector('.add-markdown-btn');
+    if (existingBtn) {
+      existingBtn.remove();
     }
 
     const addBtn = iframeDoc.createElement('button');
     addBtn.className = 'add-markdown-btn';
-    addBtn.innerHTML = `<i class=\"ri-add-line\"></i> ${label}`;
-    addBtn.style.display = adminState.editMode ? 'block' : 'none';
-    // Add extra margin-bottom for resource button
-    if (type === 'resource') {
-      addBtn.style.margin = '24px auto 30px';
-    } else {
-      addBtn.style.margin = '24px auto 0 auto';
-    }
-    addBtn.style.width = 'fit-content';
-    addBtn.style.padding = '10px 20px';
-    addBtn.style.fontSize = '1rem';
-    addBtn.style.background = '#2e7d32';
-    addBtn.style.color = '#fff';
-    addBtn.style.border = 'none';
-    addBtn.style.borderRadius = '6px';
-    addBtn.style.cursor = 'pointer';
-    addBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+    addBtn.innerHTML = `<i class="ri-add-line"></i> ${label}`;
+    addBtn.style.cssText = `
+      display: ${adminState.editMode ? 'block' : 'none'};
+      margin: ${type === 'resource' ? '24px auto 30px' : '24px auto 0 auto'};
+      width: fit-content;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #2e7d32;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: relative;
+      z-index: 99999;
+      pointer-events: auto;
+    `;
 
-    addBtn.onclick = function(e) {
+    // Use addEventListener for proper event handling
+    addBtn.addEventListener('click', function(e) {
+      e.preventDefault();
       e.stopPropagation();
-      window.parent.openMarkdownCreateModal(type);
-    };
+      console.log('Add button clicked for type:', type);
+      
+      // Call the parent window's function directly
+      try {
+        if (window.parent && window.parent.openMarkdownCreateModal) {
+          window.parent.openMarkdownCreateModal(type);
+        } else {
+          // Fallback to postMessage
+          window.parent.postMessage({
+            type: 'openMarkdownCreate',
+            contentType: type
+          }, '*');
+        }
+      } catch (err) {
+        console.error('Error opening modal:', err);
+      }
+    }, true);
 
     // Insert the button after the grid container
     if (container.parentNode) {
@@ -293,6 +311,29 @@ function createAddButtons(iframeDoc) {
     }
   });
 }
+
+// Update the message listener to be more robust
+window.addEventListener('message', function(event) {
+  console.log('Message received:', event.data);
+  if (event.data && event.data.type === 'openMarkdownCreate') {
+    openMarkdownCreateModal(event.data.contentType);
+  }
+});
+
+// Make sure openMarkdownCreateModal is globally accessible
+window.openMarkdownCreateModal = function(type) {
+  console.log('Opening create modal for:', type);
+  adminState.currentEdit = {
+    type,
+    isMarkdown: true,
+    isNew: true
+  };
+
+  elements.modalForm.innerHTML = buildMarkdownForm(type, {});
+  elements.editModal.classList.add('active');
+};
+
+
 
 
 
@@ -328,7 +369,12 @@ function createEditableHighlight(element) {
 
 function createMarkdownEditOverlay(element, type) {
   const iframeRect = elements.siteIframe.getBoundingClientRect();
+  const iframeDoc = elements.siteIframe.contentDocument;
+  const iframeWindow = elements.siteIframe.contentWindow;
+  
+  // Get element position relative to iframe viewport
   const rect = element.getBoundingClientRect();
+  
   const filename = element.dataset.markdownFile;
 
   const overlay = document.createElement('div');
@@ -339,18 +385,23 @@ function createMarkdownEditOverlay(element, type) {
     overlay.classList.add('markdown-edit-overlay-yellow');
   }
   
-  overlay.style.top = (rect.top + iframeRect.top) + 'px';
-  overlay.style.left = (rect.left + iframeRect.left) + 'px';
+  // Position relative to parent window: iframe position + element position in iframe
+  // Don't add scroll offset here - getBoundingClientRect already accounts for scroll
+  overlay.style.top = (iframeRect.top + rect.top) + 'px';
+  overlay.style.left = (iframeRect.left + rect.left) + 'px';
   overlay.style.width = rect.width + 'px';
   overlay.style.height = rect.height + 'px';
+  overlay.style.pointerEvents = 'none';
 
   const buttonGroup = document.createElement('div');
   buttonGroup.className = 'markdown-edit-buttons';
+  buttonGroup.style.pointerEvents = 'auto'; // Make buttons clickable
   
   // Edit button with circular style
   const editBtn = document.createElement('div');
   editBtn.className = 'markdown-edit-btn';
   editBtn.innerHTML = '<i class="ri-edit-line"></i>';
+  editBtn.style.pointerEvents = 'auto';
   editBtn.onclick = (e) => {
     e.stopPropagation();
     openMarkdownEditModal(element, type, filename);
@@ -360,6 +411,7 @@ function createMarkdownEditOverlay(element, type) {
   const deleteBtn = document.createElement('div');
   deleteBtn.className = 'markdown-delete-btn';
   deleteBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
+  deleteBtn.style.pointerEvents = 'auto';
   deleteBtn.onclick = (e) => {
     e.stopPropagation();
     deleteMarkdownFile(filename, type);
@@ -580,15 +632,22 @@ function updateHighlightPositions() {
         highlight.style.left = (rect.left) + "px";
         highlight.style.width = rect.width + "px";
         highlight.style.height = rect.height + "px";
-        highlight.style.pointerEvents = 'none'; // Allow interaction
+        highlight.style.pointerEvents = 'none';
       }
       
       if (overlay) {
-        overlay.style.top = (rect.top + iframeRect.top) + "px";
-        overlay.style.left = (rect.left + iframeRect.left) + "px";
-        overlay.style.width = rect.width + "px";
-        overlay.style.height = rect.height + "px";
-        overlay.style.pointerEvents = 'none'; // Don't block scrolling
+        // Position relative to parent window: iframe position + element position in iframe
+        overlay.style.top = (iframeRect.top + rect.top) + 'px';
+        overlay.style.left = (iframeRect.left + rect.left) + 'px';
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+        overlay.style.pointerEvents = 'none';
+        
+        // Ensure buttons are clickable
+        const buttonGroup = overlay.querySelector('.markdown-edit-buttons');
+        if (buttonGroup) {
+          buttonGroup.style.pointerEvents = 'auto';
+        }
       }
     });
   } catch (e) {
