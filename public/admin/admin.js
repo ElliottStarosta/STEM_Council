@@ -729,6 +729,13 @@ function saveMarkdownChanges() {
       filename: newFilename,
       data: formData
     });
+
+    // Insert a live preview card for the newly created item
+    try {
+      insertNewMarkdownCard(type, formData, newFilename);
+    } catch (e) {
+      console.warn('Failed to insert new card preview:', e);
+    }
   } else {
     adminState.markdownChanges.modified[filename] = formData;
     // Update live preview in iframe for existing items
@@ -862,6 +869,150 @@ function updateMarkdownPreview(type, element, data, filename) {
   }
   
   // Refresh overlay positions after DOM changes
+  updateHighlightPositions();
+}
+
+// Insert a new card into the iframe grid as a live preview for newly created markdown items
+function insertNewMarkdownCard(type, data, filename) {
+  const iframeWindow = elements.siteIframe && elements.siteIframe.contentWindow;
+  const iframeDoc = elements.siteIframe && elements.siteIframe.contentDocument;
+  if (!iframeDoc) return;
+
+  if (type === 'club') {
+    const grid = iframeDoc.querySelector('.clubs-grid');
+    if (!grid) return;
+    const card = iframeDoc.createElement('div');
+    card.className = 'club-card';
+    card.setAttribute('data-club', (data.name || '').toLowerCase().replace(/\s+/g, '-'));
+    card.setAttribute('data-markdown-file', filename);
+    card.innerHTML = `
+      <div class="club-card-inner">
+        <div class="club-icon"><i class="${data.icon || 'ri-star-line'}"></i></div>
+        <h3 class="club-name">${escapeHtml(data.name || '')}</h3>
+        <p class="club-description">${escapeHtml(data.description || '')}</p>
+        <div class="club-links">
+          ${(data.socialLinks || []).map(link => `<a href="${link.url || '#'}" class="club-link" title="${escapeHtml(link.type || 'Link')}" target="_blank" rel="noopener noreferrer"><i class="${link.icon || 'ri-link'}"></i></a>`).join('')}
+        </div>
+      </div>
+      <div class="club-card-glow"></div>
+    `;
+    grid.appendChild(card);
+
+    // Make sure the new card is visible (bypass initial animation states)
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+
+    // Create overlay/edit controls for this new card
+    createMarkdownEditOverlay(card, 'club');
+  }
+
+  if (type === 'event') {
+    const grid = iframeDoc.getElementById('eventsGrid') || iframeDoc.querySelector('.events-grid');
+    if (!grid) return;
+
+    // Try to assign a new event id after current max
+    let newId = 1;
+    const eventsManager = iframeWindow && iframeWindow.eventsManager;
+    if (eventsManager && Array.isArray(eventsManager.eventsData) && eventsManager.eventsData.length > 0) {
+      newId = Math.max(...eventsManager.eventsData.map(e => Number(e.id) || 0)) + 1;
+    }
+
+    const images = Array.isArray(data.images) ? data.images.map(img => (typeof img === 'object' && img !== null) ? (img.image || '') : img) : [];
+    const firstImage = images[0] || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop';
+    const card = iframeDoc.createElement('div');
+    card.className = 'event-card';
+    card.setAttribute('data-event-id', String(newId));
+    card.setAttribute('data-markdown-file', filename);
+    const formattedDate = (eventsManager && typeof eventsManager.formatDate === 'function' && data.startDate && data.endDate)
+      ? eventsManager.formatDate(data.startDate, data.endDate)
+      : '';
+    card.innerHTML = `
+      <img src="${firstImage}" alt="${escapeHtml(data.name || '')}" class="event-image" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
+      <div class="event-content">
+        <div class="event-date">${formattedDate}</div>
+        <h3 class="event-name">${escapeHtml(data.name || '')}</h3>
+        <p class="event-preview">${escapeHtml((data.body || '').length > 100 ? (data.body || '').substring(0, 100) + '...' : (data.body || ''))}</p>
+        <button class="event-view-more">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9,18 15,12 9,6"></polyline>
+          </svg>
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+
+    // Ensure immediate visibility
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+
+    // Update eventsManager state so modal/details continue to work
+    if (eventsManager) {
+      const newEvent = {
+        id: newId,
+        name: data.name || '',
+        startDate: data.startDate || '',
+        endDate: data.endDate || '',
+        description: data.body || '',
+        images: images.length ? images : ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'],
+        filename: filename.replace(/^events\//, '')
+      };
+      eventsManager.eventsData.push(newEvent);
+    }
+
+    createMarkdownEditOverlay(card, 'event');
+  }
+
+  if (type === 'resource') {
+    const grid = iframeDoc.querySelector('.resources-grid');
+    if (!grid) return;
+    const card = iframeDoc.createElement('div');
+    card.className = 'resource-card';
+    card.setAttribute('data-type', data.type || 'videos');
+    card.setAttribute('data-markdown-file', filename);
+    const tagsHTML = (data.tags || []).map(t => `<span class="tag">${escapeHtml(t.tag || '')}</span>`).join('');
+    card.innerHTML = `
+      <div class="card-icon"><i class="${data.icon || 'ri-star-line'}"></i></div>
+      <div class="card-content">
+        <h3 class="card-title">${escapeHtml(data.title || '')}</h3>
+        <p class="card-description">${escapeHtml(data.description || '')}</p>
+        <div class="card-tags">${tagsHTML}</div>
+      </div>
+      <div class="card-action">
+        <button class="resource-btn">Visit Now</button>
+      </div>
+    `;
+    const btn = card.querySelector('.resource-btn');
+    if (btn && data.url) {
+      btn.onclick = function() { window.open(data.url, '_blank'); };
+    }
+    grid.appendChild(card);
+
+    // Make sure the new card is visible and not filtered out
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+    card.classList.remove('hidden', 'fade-out');
+    card.classList.add('fade-in');
+
+    // If a category tab is active that would hide this card, switch to 'all' to show it
+    const activeTab = iframeDoc.querySelector('.category-tab.active');
+    const activeCategory = activeTab && activeTab.getAttribute('data-category');
+    if (activeCategory && activeCategory !== 'all') {
+      const matches = (data.type || 'videos') === activeCategory;
+      if (!matches) {
+        const allTab = Array.from(iframeDoc.querySelectorAll('.category-tab')).find(t => t.getAttribute('data-category') === 'all');
+        if (allTab) {
+          allTab.click();
+        } else {
+          // Fallback: ensure the card is displayed regardless
+          card.style.display = 'block';
+        }
+      }
+    }
+
+    createMarkdownEditOverlay(card, 'resource');
+  }
+
+  // Refresh overlay layout after insertion
   updateHighlightPositions();
 }
 
