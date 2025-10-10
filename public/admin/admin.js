@@ -440,14 +440,12 @@ function openMarkdownEditModal(element, type, filename) {
     element,
     type,
     filename,
-    isMarkdown: true,
+    isMarkdown: true
   };
 
-  // Fetch current data from element's data attributes or parse from content
   const currentData = extractMarkdownData(element, type);
-
-  elements.modalForm.innerHTML = buildMarkdownForm(type, currentData);
-  elements.editModal.classList.add("active");
+  elements.modalForm.innerHTML = buildMarkdownFormWithIconPicker(type, currentData);
+  elements.editModal.classList.add('active');
 }
 
 function extractMarkdownData(element, type) {
@@ -521,49 +519,378 @@ function extractMarkdownData(element, type) {
   return data;
 }
 
+// Remix Icon Picker
+const iconCategories = {
+  'Common': ['star-line', 'star-fill', 'heart-line', 'heart-fill', 'home-line', 'home-fill', 'user-line', 'user-fill', 'settings-line', 'settings-fill', 'search-line', 'menu-line', 'close-line', 'check-line', 'checkbox-line', 'checkbox-circle-line', 'arrow-right-line', 'arrow-left-line', 'arrow-up-line', 'arrow-down-line', 'add-line', 'subtract-line', 'more-line', 'more-2-line', 'apps-line', 'dashboard-line', 'grid-line', 'layout-grid-line'],
+  
+  'Arrows & Direction': ['arrow-right-s-line', 'arrow-left-s-line', 'arrow-up-s-line', 'arrow-down-s-line', 'arrow-right-circle-line', 'arrow-left-circle-line', 'arrow-up-circle-line', 'arrow-down-circle-line', 'arrow-drop-down-line', 'arrow-drop-up-line', 'arrow-drop-right-line', 'arrow-drop-left-line', 'corner-down-right-line', 'corner-down-left-line', 'corner-up-right-line', 'corner-up-left-line', 'expand-left-right-line', 'expand-up-down-line'],
+  
+  'Tech & Code': ['code-s-slash-line', 'code-line', 'code-box-line', 'terminal-line', 'terminal-box-line', 'command-line', 'computer-line', 'macbook-line', 'smartphone-line', 'tablet-line', 'cpu-line', 'database-line', 'server-line', 'hard-drive-line', 'save-line', 'bug-line', 'git-branch-line', 'git-commit-line', 'git-merge-line', 'git-pull-request-line', 'github-line', 'github-fill', 'gitlab-line', 'html5-line', 'html5-fill', 'css3-line', 'css3-fill', 'javascript-line', 'javascript-fill', 'reactjs-line', 'reactjs-fill', 'vuejs-line', 'vuejs-fill', 'angularjs-line', 'npmjs-line', 'stack-line', 'braces-line', 'parentheses-line', 'brackets-line'],
+  
+  'Education & Learning': ['book-line', 'book-open-line', 'book-2-line', 'book-3-line', 'booklet-line', 'book-read-line', 'pencil-line', 'pen-nib-line', 'edit-2-line', 'draft-line', 'graduation-cap-line', 'school-line', 'bookmark-line', 'bookmark-2-line', 'bookmark-3-line', 'lightbulb-line', 'lightbulb-flash-line', 'archive-line', 'inbox-line', 'trophy-line', 'medal-line', 'award-line', 'calculator-line', 'flask-line', 'test-tube-line', 'microscope-line', 'telescope-line', 'compass-line', 'article-line', 'newspaper-line', 'bill-line'],
+  
+  'Communication': ['mail-line', 'mail-open-line', 'mail-send-line', 'inbox-archive-line', 'chat-1-line', 'chat-2-line', 'chat-3-line', 'chat-4-line', 'message-line', 'message-2-line', 'message-3-line', 'question-answer-line', 'feedback-line', 'discuss-line', 'notification-line', 'notification-2-line', 'notification-3-line', 'notification-4-line', 'alarm-line', 'phone-line', 'phone-fill', 'smartphone-line', 'cellphone-line', 'contacts-line', 'global-line', 'earth-line', 'wifi-line', 'wifi-off-line', 'signal-wifi-line', 'signal-wifi-error-line', 'bluetooth-line', 'bluetooth-connect-line', 'send-plane-line', 'send-plane-2-line', 'at-line', 'reply-line', 'reply-all-line'],
+  
+  'Media & Files': ['image-line', 'image-2-line', 'image-add-line', 'image-edit-line', 'gallery-line', 'video-line', 'video-add-line', 'film-line', 'clapperboard-line', 'music-line', 'music-2-line', 'disc-line', 'album-line', 'file-line', 'file-text-line', 'file-list-line', 'file-copy-line', 'file-add-line', 'file-download-line', 'file-upload-line', 'folder-line', 'folder-open-line', 'folder-add-line', 'folder-2-line', 'folder-3-line', 'camera-line', 'camera-2-line', 'camera-3-line', 'polaroid-line', 'headphone-line', 'mic-line', 'mic-2-line', 'volume-up-line', 'volume-down-line', 'volume-mute-line', 'play-line', 'play-circle-line', 'pause-line', 'pause-circle-line', 'stop-line', 'stop-circle-line', 'record-circle-line', 'repeat-line', 'shuffle-line', 'skip-back-line', 'skip-forward-line', 'speed-line'],
+  
+  'Social Media': ['twitter-line', 'twitter-fill', 'twitter-x-line', 'twitter-x-fill', 'facebook-line', 'facebook-fill', 'facebook-circle-line', 'instagram-line', 'instagram-fill', 'linkedin-line', 'linkedin-fill', 'linkedin-box-line', 'youtube-line', 'youtube-fill', 'discord-line', 'discord-fill', 'telegram-line', 'telegram-fill', 'whatsapp-line', 'whatsapp-fill', 'messenger-line', 'slack-line', 'slack-fill', 'reddit-line', 'reddit-fill', 'pinterest-line', 'tiktok-line', 'tiktok-fill', 'snapchat-line', 'twitch-line', 'spotify-line', 'spotify-fill', 'share-line', 'share-forward-line', 'share-box-line', 'link', 'link-unlink', 'links-line'],
+  
+  'UI & Controls': ['eye-line', 'eye-fill', 'eye-off-line', 'eye-close-line', 'delete-bin-line', 'delete-bin-2-line', 'delete-bin-3-line', 'delete-bin-4-line', 'delete-bin-5-line', 'edit-line', 'edit-2-line', 'edit-box-line', 'edit-circle-line', 'download-line', 'download-2-line', 'download-cloud-line', 'upload-line', 'upload-2-line', 'upload-cloud-line', 'refresh-line', 'restart-line', 'loader-line', 'loader-2-line', 'loader-3-line', 'loader-4-line', 'loader-5-line', 'lock-line', 'lock-2-line', 'lock-unlock-line', 'unlock-line', 'key-line', 'key-2-line', 'login-box-line', 'logout-box-line', 'login-circle-line', 'logout-circle-line', 'user-add-line', 'user-follow-line', 'user-unfollow-line', 'user-settings-line', 'group-line', 'team-line', 'contrast-line', 'contrast-2-line', 'toggle-line', 'equalizer-line', 'filter-line', 'filter-2-line', 'filter-3-line', 'sort-asc', 'sort-desc'],
+  
+  'Business & Finance': ['briefcase-line', 'briefcase-2-line', 'briefcase-3-line', 'briefcase-4-line', 'suitcase-line', 'calendar-line', 'calendar-2-line', 'calendar-event-line', 'calendar-todo-line', 'calendar-check-line', 'time-line', 'timer-line', 'hourglass-line', 'pie-chart-line', 'pie-chart-2-line', 'bar-chart-line', 'bar-chart-2-line', 'line-chart-line', 'stock-line', 'funds-line', 'money-dollar-circle-line', 'money-dollar-box-line', 'money-euro-circle-line', 'money-pound-circle-line', 'money-yen-circle-line', 'coin-line', 'coins-line', 'bank-card-line', 'bank-card-2-line', 'credit-card-line', 'bank-line', 'shopping-cart-line', 'shopping-cart-2-line', 'shopping-bag-line', 'shopping-basket-line', 'store-line', 'store-2-line', 'store-3-line', 'price-tag-line', 'price-tag-2-line', 'price-tag-3-line', 'percent-line', 'coupon-line', 'wallet-line', 'wallet-2-line', 'wallet-3-line', 'safe-line', 'exchange-line', 'exchange-dollar-line'],
+  
+  'Nature & Weather': ['leaf-line', 'leaf-fill', 'plant-line', 'plant-fill', 'seedling-line', 'tree-line', 'tree-fill', 'palm-tree-line', 'cactus-line', 'flower-line', 'flowers-line', 'sun-line', 'sun-fill', 'moon-line', 'moon-fill', 'moon-clear-line', 'moon-cloudy-line', 'cloudy-line', 'cloudy-2-line', 'cloud-line', 'cloud-windy-line', 'rainy-line', 'drizzle-line', 'showers-line', 'heavy-showers-line', 'thunderstorms-line', 'snowy-line', 'haze-line', 'mist-line', 'foggy-line', 'windy-line', 'tornado-line', 'typhoon-line', 'celsius-line', 'fahrenheit-line', 'temp-hot-line', 'temp-cold-line', 'fire-line', 'fire-fill', 'flashlight-line', 'blaze-line', 'sparkling-line', 'water-flash-line'],
+  
+  'Animals & Food': ['bear-smile-line', 'bug-line', 'bug-2-line', 'butterfly-line', 'dog-line', 'cat-line', 'rabbit-line', 'fish-line', 'turtle-line', 'restaurant-line', 'restaurant-2-line', 'knife-line', 'knife-blood-line', 'cake-line', 'cake-2-line', 'cake-3-line', 'cup-line', 'cup-fill', 'goblet-line', 'beer-line', 'wine-line', 'champagne-line', 'cocktail-line', 'bowl-line', 'plate-line', 'pizza-line', 'hamburger-line'],
+  
+  'Travel & Places': ['map-line', 'map-2-line', 'map-pin-line', 'map-pin-2-line', 'map-pin-user-line', 'map-pin-add-line', 'compass-line', 'compass-2-line', 'compass-3-line', 'compass-4-line', 'navigation-line', 'route-line', 'road-map-line', 'roadster-line', 'car-line', 'police-car-line', 'taxi-line', 'bus-line', 'truck-line', 'train-line', 'subway-line', 'plane-line', 'flight-takeoff-line', 'flight-land-line', 'rocket-line', 'rocket-2-line', 'ship-line', 'sailboat-line', 'bike-line', 'motorbike-line', 'parking-line', 'parking-box-line', 'gas-station-line', 'charging-pile-line', 'hotel-line', 'building-line', 'building-2-line', 'building-3-line', 'building-4-line', 'home-2-line', 'home-3-line', 'home-4-line', 'home-5-line', 'home-gear-line', 'home-heart-line', 'home-wifi-line', 'community-line', 'government-line', 'bank-line', 'hospital-line', 'church-line', 'ancient-gate-line', 'castle-line'],
+  
+  'Sports & Gaming': ['basketball-line', 'football-line', 'baseball-line', 'boxing-line', 'ping-pong-line', 'riding-line', 'run-line', 'walk-line', 'sword-line', 'game-line', 'gamepad-line', 'joystick-line', 'key-2-line', 'medal-2-line', 'trophy-line', 'trophy-fill'],
+  
+  'Health & Medical': ['hospital-line', 'hospital-fill', 'nurse-line', 'stethoscope-line', 'syringe-line', 'capsule-line', 'medicine-bottle-line', 'first-aid-kit-line', 'mental-health-line', 'heart-pulse-line', 'health-book-line', 'lungs-line', 'virus-line', 'dna-line', 'microscope-line', 'test-tube-line', 'flask-line', 'hand-sanitizer-line', 'thermometer-line', 'psychotherapy-line'],
+  
+  'Emojis & Expressions': ['emotion-line', 'emotion-happy-line', 'emotion-normal-line', 'emotion-unhappy-line', 'emotion-laugh-line', 'emotion-sad-line', 'emotion-2-line', 'skull-line', 'skull-2-line', 'ghost-line', 'ghost-2-line', 'ghost-smile-line', 'hand-heart-line', 'thumb-up-line', 'thumb-down-line', 'dislike-line'],
+  
+  'Text & Format': ['bold', 'italic', 'underline', 'strikethrough', 'font-color', 'font-size', 'font-size-2', 'h-1', 'h-2', 'h-3', 'h-4', 'h-5', 'h-6', 'paragraph', 'text', 'text-spacing', 'align-left', 'align-center', 'align-right', 'align-justify', 'align-top', 'align-bottom', 'align-vertically', 'list-check', 'list-ordered', 'list-unordered', 'indent-decrease', 'indent-increase', 'line-height', 'text-wrap', 'text-direction-l', 'text-direction-r', 'subscript', 'superscript', 'omega', 'asterisk', 'double-quotes-l', 'double-quotes-r', 'single-quotes-l', 'single-quotes-r'],
+  
+  'Shapes & Design': ['shape-line', 'circle-line', 'checkbox-blank-circle-line', 'square-line', 'rectangle-line', 'triangle-line', 'pentagon-line', 'hexagon-line', 'octagon-line', 'star-half-line', 'quill-pen-line', 'brush-line', 'brush-2-line', 'brush-3-line', 'brush-4-line', 'paint-line', 'paint-brush-line', 'palette-line', 'contrast-drop-line', 'drop-line', 'ink-bottle-line', 'magic-line', 'scissors-line', 'scissors-2-line', 'scissors-cut-line', 'collage-line', 'layout-line', 'layout-2-line', 'layout-3-line', 'layout-4-line', 'layout-5-line', 'layout-6-line'],
+  
+  'System & Devices': ['smartphone-line', 'tablet-line', 'computer-line', 'laptop-line', 'macbook-line', 'cellphone-line', 'device-line', 'tv-line', 'tv-2-line', 'monitor-line', 'dashboard-line', 'hard-drive-line', 'hard-drive-2-line', 'save-line', 'save-2-line', 'save-3-line', 'sd-card-line', 'sd-card-mini-line', 'sim-card-line', 'sim-card-2-line', 'router-line', 'radar-line', 'fingerprint-line', 'fingerprint-2-line', 'scan-line', 'scan-2-line', 'barcode-line', 'barcode-box-line', 'qr-code-line', 'qr-scan-line', 'qr-scan-2-line'],
+  
+  'Tools & Objects': ['tools-line', 'tools-fill', 'hammer-line', 'axe-line', 'scissors-line', 'plug-line', 'plug-2-line', 'flashlight-line', 'lightbulb-line', 'lightbulb-flash-line', 'lamp-line', 'fire-line', 'fire-fill', 'bluetooth-line', 'wireless-charging-line', 'battery-line', 'battery-charge-line', 'battery-low-line', 'battery-saver-line', 'anchor-line', 'lifebuoy-line', 'umbrella-line', 't-shirt-line', 't-shirt-2-line', 't-shirt-air-line', 'shirt-line', 'door-line', 'door-open-line', 'door-closed-line', 'door-lock-line', 'key-line', 'scales-line', 'telescope-line', 'scissors-2-line']
+};
+
+let currentIconInput = null;
+let iconPickerModal = null;
+
+function createIconPicker() {
+  if (iconPickerModal) return;
+  
+  iconPickerModal = document.createElement('div');
+  iconPickerModal.className = 'icon-picker-modal';
+  iconPickerModal.innerHTML = `
+    <div class="icon-picker-header">
+      <div class="icon-picker-title">Choose Icon</div>
+      <button class="icon-picker-close" onclick="closeIconPicker()">×</button>
+    </div>
+    <input type="text" class="icon-picker-search" placeholder="Search" id="iconSearch">
+    <div class="icon-picker-content" id="iconContent"></div>
+  `;
+  
+  document.body.appendChild(iconPickerModal);
+  
+  // Populate icons
+  const content = document.getElementById('iconContent');
+  for (const [category, icons] of Object.entries(iconCategories)) {
+    const section = document.createElement('div');
+    section.innerHTML = `<div class="icon-picker-category-title">${category}</div>`;
+    
+    const grid = document.createElement('div');
+    grid.className = 'icon-picker-grid';
+    
+    icons.forEach(icon => {
+      const item = document.createElement('div');
+      item.className = 'icon-picker-item';
+      item.innerHTML = `<i class="ri-${icon}"></i>`;
+      item.dataset.icon = `ri-${icon}`;
+      item.onclick = () => selectIcon(`ri-${icon}`);
+      grid.appendChild(item);
+    });
+    
+    section.appendChild(grid);
+    content.appendChild(section);
+  }
+  
+  // Search functionality
+  document.getElementById('iconSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const allSections = content.querySelectorAll('.icon-picker-grid').length > 0;
+    
+    document.querySelectorAll('.icon-picker-item').forEach(item => {
+      const iconName = item.dataset.icon.toLowerCase();
+      item.style.display = iconName.includes(search) ? 'flex' : 'none';
+    });
+    
+    // Hide category titles if searching
+    document.querySelectorAll('.icon-picker-category-title').forEach(title => {
+      title.style.display = search ? 'none' : 'block';
+    });
+  });
+}
+
+function openIconPicker(inputElement) {
+  currentIconInput = inputElement;
+  
+  // Store current scroll position
+  const modalContentEl = document.querySelector('.modal-content');
+  if (modalContentEl) {
+    elements.modalForm.dataset.scrollPosition = modalContentEl.scrollTop;
+    modalContentEl.scrollTop = 0;
+  }
+  
+  // Store the current modal content
+  const modalContent = elements.modalForm.innerHTML;
+  const modalTitle = document.querySelector('.modal-title').textContent;
+  
+  // Replace modal content with icon picker - NOW WITH SEARCH BAR
+  document.querySelector('.modal-title').textContent = 'Choose Icon';
+  elements.modalForm.innerHTML = `
+    <input type="text" class="icon-picker-search" placeholder="Search icons..." id="iconSearch">
+    <div class="icon-picker-content" id="iconContent"></div>
+  `;
+  
+  // Remove modal-content overflow to prevent double scrollbar
+  modalContentEl.style.overflow = 'hidden';
+  
+  // Store original content to restore later
+  elements.modalForm.dataset.originalContent = modalContent;
+  elements.modalForm.dataset.originalTitle = modalTitle;
+  
+  // Populate icons
+  const content = document.getElementById('iconContent');
+  for (const [category, icons] of Object.entries(iconCategories)) {
+    const section = document.createElement('div');
+    section.innerHTML = `<div class="icon-picker-category-title">${category}</div>`;
+    
+    const grid = document.createElement('div');
+    grid.className = 'icon-picker-grid';
+    
+    icons.forEach(icon => {
+      const item = document.createElement('div');
+      item.className = 'icon-picker-item';
+      item.innerHTML = `<i class="ri-${icon}"></i>`;
+      item.dataset.icon = `ri-${icon}`;
+      item.onclick = () => selectIcon(`ri-${icon}`);
+      grid.appendChild(item);
+    });
+    
+    section.appendChild(grid);
+    content.appendChild(section);
+  }
+  
+  // Search functionality
+  document.getElementById('iconSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    
+    document.querySelectorAll('.icon-picker-item').forEach(item => {
+      const iconName = item.dataset.icon.toLowerCase();
+      item.style.display = iconName.includes(search) ? 'flex' : 'none';
+    });
+    
+    // Hide category titles if searching
+    document.querySelectorAll('.icon-picker-category-title').forEach(title => {
+      title.style.display = search ? 'none' : 'block';
+    });
+  });
+  
+  // Highlight currently selected icon
+  const currentIcon = inputElement.value;
+  document.querySelectorAll('.icon-picker-item').forEach(item => {
+    item.classList.toggle('selected', item.dataset.icon === currentIcon);
+  });
+  
+  // Hide the save/cancel buttons temporarily
+  elements.modalSaveBtn.style.display = 'none';
+  elements.modalCancelBtn.style.display = 'none';
+}
+
+window.closeIconPicker = function() {
+  // Restore original modal content
+  const originalContent = elements.modalForm.dataset.originalContent;
+  const originalTitle = elements.modalForm.dataset.originalTitle;
+  const scrollPosition = elements.modalForm.dataset.scrollPosition;
+  
+  if (originalContent) {
+    elements.modalForm.innerHTML = originalContent;
+    document.querySelector('.modal-title').textContent = originalTitle;
+    
+    // Restore modal-content overflow
+    const modalContentEl = document.querySelector('.modal-content');
+    modalContentEl.style.overflow = 'auto';
+    
+    // Restore scroll position
+    if (scrollPosition !== undefined) {
+      setTimeout(() => {
+        modalContentEl.scrollTop = parseInt(scrollPosition);
+      }, 10);
+    }
+    
+    // Show the save/cancel buttons again
+    elements.modalSaveBtn.style.display = 'flex';
+    elements.modalCancelBtn.style.display = 'flex';
+    
+    // Clean up
+    delete elements.modalForm.dataset.originalContent;
+    delete elements.modalForm.dataset.originalTitle;
+    delete elements.modalForm.dataset.scrollPosition;
+  }
+};
+
+function selectIcon(iconClass) {
+  if (currentIconInput) {
+    // Store reference - could be by ID or by element reference
+    const targetInputId = currentIconInput.id;
+    const isDirectReference = !targetInputId;
+    
+    // Store the parent wrapper to find elements after DOM reload
+    const parentWrapper = currentIconInput.closest('.icon-picker-input-wrapper');
+    const parentGroup = currentIconInput.closest('.social-link-group');
+    const groupIndex = parentGroup ? parentGroup.dataset.index : null;
+    
+    // Close and restore the original form first
+    closeIconPicker();
+    
+    // Now update the input and preview in the restored form
+    setTimeout(() => {
+      let restoredInput;
+      let preview;
+      
+      if (isDirectReference) {
+        // For social link icons, find by the group index
+        if (groupIndex !== null) {
+          const restoredGroup = document.querySelector(`.social-link-group[data-index="${groupIndex}"]`);
+          if (restoredGroup) {
+            restoredInput = restoredGroup.querySelector('input[data-field="icon"]');
+            preview = restoredGroup.querySelector('.icon-preview i');
+          }
+        }
+      } else {
+        // For main icon with ID
+        restoredInput = document.getElementById(targetInputId);
+        const wrapper = restoredInput?.closest('.icon-picker-input-wrapper');
+        preview = wrapper?.querySelector('.icon-preview i');
+      }
+      
+      if (restoredInput) {
+        restoredInput.value = iconClass;
+      }
+      
+      if (preview) {
+        preview.className = iconClass;
+      }
+    }, 10);
+  }
+}
+// Update buildMarkdownForm to use icon picker
+function buildMarkdownFormWithIconPicker(type, data = {}) {
+  const iconField = (id, value, label) => `
+    <div class="form-group">
+      <label class="form-label" for="${id}">${label}</label>
+      <div class="icon-picker-container">
+        <div class="icon-picker-input-wrapper">
+          <div class="icon-preview" onclick="openIconPicker(document.getElementById('${id}'))">
+            <i class="${escapeHtml(value || 'ri-star-line')}"></i>
+          </div>
+          <input class="form-input" id="${id}" type="text" value="${escapeHtml(value || 'ri-star-line')}" required readonly style="flex: 1; display: none;">
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const forms = {
+    club: `
+      <div class="form-group">
+        <label class="form-label" for="name">Club Name</label>
+        <input class="form-input" id="name" type="text" value="${escapeHtml(data.name || '')}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-textarea" id="description" rows="4" required>${escapeHtml(data.description || '')}</textarea>
+      </div>
+      ${iconField('icon', data.icon, 'Club Icon')}
+      <div class="form-group">
+        <label class="form-label">Social Links</label>
+        <div id="socialLinks">
+          ${(data.socialLinks || []).map((link, i) => `
+            <div class="social-link-group" data-index="${i}">
+              <input class="form-input" placeholder="Type" value="${escapeHtml(link.type || '')}" data-field="type">
+              <input class="form-input" placeholder="URL" value="${escapeHtml(link.url || '')}" data-field="url">
+              <div class="icon-picker-input-wrapper" style="flex: 1;">
+                <div class="icon-preview" onclick="openIconPicker(this.nextElementSibling)" style="width: 40px; height: 40px;">
+                  <i class="${escapeHtml(link.icon || 'ri-link')}"></i>
+                </div>
+                <input class="form-input" placeholder="Icon" value="${escapeHtml(link.icon || 'ri-link')}" data-field="icon" readonly style="display: none;">
+              </div>
+              <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
+            </div>
+          `).join('')}
+        </div>
+        <button type="button" class="add-link-btn" onclick="addSocialLinkWithPicker()">+ Add Link</button>
+      </div>
+    `,
+    resource: `
+      <div class="form-group">
+        <label class="form-label" for="title">Resource Title</label>
+        <input class="form-input" id="title" type="text" value="${escapeHtml(data.title || '')}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-textarea" id="description" rows="3" required>${escapeHtml(data.description || '')}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="url">URL</label>
+        <input class="form-input" id="url" type="url" value="${escapeHtml(data.url || '')}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="type">Type</label>
+        <select class="form-input" id="type" required>
+          <option value="videos" ${data.type === 'videos' ? 'selected' : ''}>Videos</option>
+          <option value="courses" ${data.type === 'courses' ? 'selected' : ''}>Courses</option>
+          <option value="tools" ${data.type === 'tools' ? 'selected' : ''}>Tools</option>
+          <option value="competitions" ${data.type === 'competitions' ? 'selected' : ''}>Competitions</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <div id="tagList">
+          ${(data.tags || []).map((tag, i) => `
+            <div class="tag-input-group">
+              <input class="form-input" placeholder="Tag" value="${escapeHtml(tag.tag || tag)}" data-index="${i}">
+              <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
+            </div>
+          `).join('')}
+        </div>
+        <button type="button" class="add-link-btn" onclick="addTagInput()">+ Add Tag</button>
+      </div>
+      ${iconField('icon', data.icon, 'Resource Icon')}
+    `
+  };
+  
+  // Keep event form as is since it doesn't use icons
+  if (type === 'event') {
+    return buildMarkdownForm(type, data);
+  }
+  
+  return forms[type] || '';
+}
+
 function buildMarkdownForm(type, data = {}) {
   const forms = {
     club: `
       <div class="form-group">
         <label class="form-label" for="name">Club Name</label>
-        <input class="form-input" id="name" type="text" value="${escapeHtml(
-          data.name || ""
-        )}" required>
+        <input class="form-input" id="name" type="text" value="${escapeHtml(data.name || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="description">Description</label>
-        <textarea class="form-textarea" id="description" rows="4" required>${escapeHtml(
-          data.description || ""
-        )}</textarea>
+        <textarea class="form-textarea" id="description" rows="4" required>${escapeHtml(data.description || '')}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label" for="icon">Icon (Remix Icon class)</label>
-        <input class="form-input" id="icon" type="text" value="${escapeHtml(
-          data.icon || "ri-star-line"
-        )}" required placeholder="e.g. ri-code-s-slash-line">
+        <input class="form-input" id="icon" type="text" value="${escapeHtml(data.icon || 'ri-star-line')}" required placeholder="e.g. ri-code-s-slash-line">
         <small style="color: #888; font-size: 12px;">Find icons at: <a href="https://remixicon.com" target="_blank">remixicon.com</a></small>
       </div>
       <div class="form-group">
         <label class="form-label">Social Links</label>
         <div id="socialLinks">
-          ${(data.socialLinks || [])
-            .map(
-              (link, i) => `
+          ${(data.socialLinks || []).map((link, i) => `
             <div class="social-link-group" data-index="${i}">
-              <input class="form-input" placeholder="Type" value="${escapeHtml(
-                link.type || ""
-              )}" data-field="type">
-              <input class="form-input" placeholder="URL" value="${escapeHtml(
-                link.url || ""
-              )}" data-field="url">
-              <input class="form-input" placeholder="Icon" value="${escapeHtml(
-                link.icon || ""
-              )}" data-field="icon">
+              <input class="form-input" placeholder="Type" value="${escapeHtml(link.type || '')}" data-field="type">
+              <input class="form-input" placeholder="URL" value="${escapeHtml(link.url || '')}" data-field="url">
+              <input class="form-input" placeholder="Icon" value="${escapeHtml(link.icon || '')}" data-field="icon">
               <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
             </div>
-          `
-            )
-            .join("")}
+          `).join('')}
         </div>
         <button type="button" class="add-link-btn" onclick="addSocialLink()">+ Add Link</button>
       </div>
@@ -571,115 +898,99 @@ function buildMarkdownForm(type, data = {}) {
     event: `
       <div class="form-group">
         <label class="form-label" for="name">Event Name</label>
-        <input class="form-input" id="name" type="text" value="${escapeHtml(
-          data.name || ""
-        )}" required>
+        <input class="form-input" id="name" type="text" value="${escapeHtml(data.name || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="startDate">Start Date</label>
-        <input class="form-input" id="startDate" type="datetime-local" value="${
-          data.startDate
-            ? new Date(data.startDate).toISOString().slice(0, 16)
-            : ""
-        }" required>
+        <input class="form-input" id="startDate" type="datetime-local" value="${data.startDate ? new Date(data.startDate).toISOString().slice(0, 16) : ''}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="endDate">End Date</label>
-        <input class="form-input" id="endDate" type="datetime-local" value="${
-          data.endDate ? new Date(data.endDate).toISOString().slice(0, 16) : ""
-        }" required>
+        <input class="form-input" id="endDate" type="datetime-local" value="${data.endDate ? new Date(data.endDate).toISOString().slice(0, 16) : ''}" required>
       </div>
       <div class="form-group">
         <label class="form-label">Images (URLs)</label>
         <div id="imageList">
-          ${(data.images || [])
-            .map(
-              (img, i) => `
+          ${(data.images || []).map((img, i) => `
             <div class="image-input-group">
-              <input class="form-input" placeholder="Image URL" value="${escapeHtml(
-                img.image || img
-              )}" data-index="${i}">
+              <input class="form-input" placeholder="Image URL" value="${escapeHtml(img.image || img)}" data-index="${i}">
               <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
             </div>
-          `
-            )
-            .join("")}
+          `).join('')}
         </div>
         <button type="button" class="add-link-btn" onclick="addImageInput()">+ Add Image</button>
       </div>
       <div class="form-group">
         <label class="form-label" for="body">Description (Markdown)</label>
-        <textarea class="form-textarea" id="body" rows="8" required>${escapeHtml(
-          data.body || ""
-        )}</textarea>
+        <textarea class="form-textarea" id="body" rows="8" required>${escapeHtml(data.body || '')}</textarea>
       </div>
     `,
     resource: `
       <div class="form-group">
         <label class="form-label" for="title">Resource Title</label>
-        <input class="form-input" id="title" type="text" value="${escapeHtml(
-          data.title || ""
-        )}" required>
+        <input class="form-input" id="title" type="text" value="${escapeHtml(data.title || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="description">Description</label>
-        <textarea class="form-textarea" id="description" rows="3" required>${escapeHtml(
-          data.description || ""
-        )}</textarea>
+        <textarea class="form-textarea" id="description" rows="3" required>${escapeHtml(data.description || '')}</textarea>
       </div>
       <div class="form-group">
         <label class="form-label" for="url">URL</label>
-        <input class="form-input" id="url" type="url" value="${escapeHtml(
-          data.url || ""
-        )}" required>
+        <input class="form-input" id="url" type="url" value="${escapeHtml(data.url || '')}" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="type">Type</label>
         <select class="form-input" id="type" required>
-          <option value="videos" ${
-            data.type === "videos" ? "selected" : ""
-          }>Videos</option>
-          <option value="courses" ${
-            data.type === "courses" ? "selected" : ""
-          }>Courses</option>
-          <option value="tools" ${
-            data.type === "tools" ? "selected" : ""
-          }>Tools</option>
-          <option value="competitions" ${
-            data.type === "competitions" ? "selected" : ""
-          }>Competitions</option>
+          <option value="videos" ${data.type === 'videos' ? 'selected' : ''}>Videos</option>
+          <option value="courses" ${data.type === 'courses' ? 'selected' : ''}>Courses</option>
+          <option value="tools" ${data.type === 'tools' ? 'selected' : ''}>Tools</option>
+          <option value="competitions" ${data.type === 'competitions' ? 'selected' : ''}>Competitions</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Tags</label>
         <div id="tagList">
-          ${(data.tags || [])
-            .map(
-              (tag, i) => `
+          ${(data.tags || []).map((tag, i) => `
             <div class="tag-input-group">
-              <input class="form-input" placeholder="Tag" value="${escapeHtml(
-                tag.tag || tag
-              )}" data-index="${i}">
+              <input class="form-input" placeholder="Tag" value="${escapeHtml(tag.tag || tag)}" data-index="${i}">
               <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
             </div>
-          `
-            )
-            .join("")}
+          `).join('')}
         </div>
         <button type="button" class="add-link-btn" onclick="addTagInput()">+ Add Tag</button>
       </div>
       <div class="form-group">
         <label class="form-label" for="icon">Icon (Remix Icon class)</label>
-        <input class="form-input" id="icon" type="text" value="${escapeHtml(
-          data.icon || "ri-star-line"
-        )}" required placeholder="e.g. ri-video-fill">
+        <input class="form-input" id="icon" type="text" value="${escapeHtml(data.icon || 'ri-star-line')}" required placeholder="e.g. ri-video-fill">
         <small style="color: #888; font-size: 12px;">Find icons at: <a href="https://remixicon.com" target="_blank">remixicon.com</a></small>
       </div>
-    `,
+    `
   };
 
-  return forms[type] || "";
+  return forms[type] || '';
 }
+
+// Update addSocialLink to use icon picker
+window.addSocialLinkWithPicker = function() {
+  const container = document.getElementById('socialLinks');
+  const index = container.children.length;
+  const html = `
+    <div class="social-link-group" data-index="${index}">
+      <input class="form-input" placeholder="Type" data-field="type">
+      <input class="form-input" placeholder="URL" data-field="url">
+      <div class="icon-picker-input-wrapper" style="flex: 1;">
+        <div class="icon-preview" onclick="openIconPicker(this.nextElementSibling)" style="width: 40px; height: 40px;">
+          <i class="ri-link"></i>
+        </div>
+        <input class="form-input" placeholder="Icon" value="ri-link" data-field="icon" readonly style="display: none;">
+      </div>
+      <button type="button" class="remove-link-btn" onclick="this.parentElement.remove()">×</button>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', html);
+};
+
+
 
 function openMarkdownCreateModal(type) {
   adminState.currentEdit = {
@@ -688,7 +999,7 @@ function openMarkdownCreateModal(type) {
     isNew: true,
   };
 
-  elements.modalForm.innerHTML = buildMarkdownForm(type, {});
+  elements.modalForm.innerHTML = buildMarkdownFormWithIconPicker(type, {});
   elements.editModal.classList.add("active");
 }
 
