@@ -94,6 +94,26 @@ class EventsManager {
     eventsData = [];
   }
 }
+ convertGoogleDriveUrl(url) {
+  if (!url || typeof url !== 'string') {
+    return url;
+  }
+  
+  // Check if it's a Google Drive share link
+  const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  
+  if (driveMatch && driveMatch[1]) {
+    const fileId = driveMatch[1];
+    // Use the thumbnail/view URL instead of download URL for direct display
+    const directUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+    console.log('Converting Google Drive URL to direct display link:', directUrl);
+    return directUrl;
+  }
+  
+  return url;
+}
+
+
 
   // Resolve image path - handles both URLs and local paths with fallback
   resolveImagePath(imagePath) {
@@ -101,6 +121,8 @@ class EventsManager {
     if (!imagePath || typeof imagePath !== 'string') {
       return fallback;
     }
+
+    imagePath = this.convertGoogleDriveUrl(imagePath);
     // If it's already a full URL, return as is
     if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
       return imagePath;
