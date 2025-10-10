@@ -731,6 +731,12 @@ function saveMarkdownChanges() {
     });
   } else {
     adminState.markdownChanges.modified[filename] = formData;
+    // Update live preview in iframe for existing items
+    try {
+      updateMarkdownPreview(type, adminState.currentEdit.element, formData, filename);
+    } catch (e) {
+      console.warn('Preview update failed:', e);
+    }
   }
   
   updateChangesUI();
@@ -769,6 +775,94 @@ function collectFormData(type) {
   }
   
   return data;
+}
+
+// Update the card preview inside the iframe to reflect pending edits
+function updateMarkdownPreview(type, element, data, filename) {
+  if (!element) return;
+  const iframeWindow = elements.siteIframe && elements.siteIframe.contentWindow;
+  const iframeDoc = elements.siteIframe && elements.siteIframe.contentDocument;
+  
+  if (type === 'club') {
+    const nameEl = element.querySelector('.club-name');
+    const descEl = element.querySelector('.club-description');
+    const iconEl = element.querySelector('.club-icon i');
+    const linksContainer = element.querySelector('.club-links');
+    if (nameEl) nameEl.textContent = data.name || '';
+    if (descEl) descEl.textContent = data.description || '';
+    if (iconEl && data.icon) iconEl.className = data.icon;
+    if (linksContainer && Array.isArray(data.socialLinks)) {
+      linksContainer.innerHTML = data.socialLinks.map(link => {
+        const type = link.type || 'Link';
+        const url = link.url || '#';
+        const icon = link.icon || 'ri-link';
+        return `<a href="${url}" class="club-link" title="${escapeHtml(type)}" target="_blank" rel="noopener noreferrer"><i class="${icon}"></i></a>`;
+      }).join('');
+    }
+    // Keep data-markdown-file as is; filename already identifies the card
+  }
+  
+  if (type === 'event') {
+    const nameEl = element.querySelector('.event-name');
+    const previewEl = element.querySelector('.event-preview');
+    const dateEl = element.querySelector('.event-date');
+    const imageEl = element.querySelector('.event-image');
+    if (nameEl) nameEl.textContent = data.name || '';
+    if (previewEl) previewEl.textContent = (data.body || '').length > 100 ? (data.body || '').substring(0, 100) + '...' : (data.body || '');
+    if (dateEl) {
+      // Prefer using iframe's formatter for consistency
+      const eventsManager = iframeWindow && iframeWindow.eventsManager;
+      if (eventsManager && typeof eventsManager.formatDate === 'function' && data.startDate && data.endDate) {
+        dateEl.textContent = eventsManager.formatDate(data.startDate, data.endDate);
+      } else if (data.startDate && data.endDate) {
+        const start = new Date(data.startDate);
+        const end = new Date(data.endDate);
+        const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+        const same = start.toDateString() === end.toDateString();
+        dateEl.textContent = same ? start.toLocaleDateString('en-US', opts) : `${start.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - ${end.toLocaleDateString('en-US', opts)}`;
+      }
+    }
+    if (imageEl && Array.isArray(data.images)) {
+      const first = data.images[0];
+      const src = typeof first === 'object' && first !== null ? (first.image || '') : (first || '');
+      if (src) imageEl.src = src;
+    }
+    // Also sync the underlying data in eventsManager so future opens reflect edits
+    const eventId = element.dataset.eventId;
+    const eventsManager = iframeWindow && iframeWindow.eventsManager;
+    if (eventId && eventsManager && Array.isArray(eventsManager.eventsData)) {
+      const match = eventsManager.eventsData.find(e => e.id == eventId);
+      if (match) {
+        if (data.name !== undefined) match.name = data.name;
+        if (data.body !== undefined) match.description = data.body;
+        if (Array.isArray(data.images)) {
+          match.images = data.images.map(img => (typeof img === 'object' && img !== null) ? (img.image || '') : img).filter(Boolean);
+        }
+        if (data.startDate) match.startDate = data.startDate;
+        if (data.endDate) match.endDate = data.endDate;
+      }
+    }
+  }
+  
+  if (type === 'resource') {
+    const titleEl = element.querySelector('.card-title');
+    const descEl = element.querySelector('.card-description');
+    const iconEl = element.querySelector('.card-icon i');
+    const tagsContainer = element.querySelector('.card-tags');
+    const btn = element.querySelector('.resource-btn');
+    if (titleEl) titleEl.textContent = data.title || '';
+    if (descEl) descEl.textContent = data.description || '';
+    if (iconEl && data.icon) iconEl.className = data.icon;
+    if (tagsContainer && Array.isArray(data.tags)) {
+      tagsContainer.innerHTML = data.tags.map(t => `<span class="tag">${escapeHtml(t.tag || '')}</span>`).join('');
+    }
+    if (btn && data.url) {
+      btn.onclick = function() { window.open(data.url, '_blank'); };
+    }
+  }
+  
+  // Refresh overlay positions after DOM changes
+  updateHighlightPositions();
 }
 
 function deleteMarkdownFile(filename, type) {
