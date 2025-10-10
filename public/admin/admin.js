@@ -465,8 +465,11 @@ function extractMarkdownData(element, type) {
     
     // Try to get date from data attributes if available
     const eventId = element.dataset.eventId;
-    if (eventId && window.eventsManager && window.eventsManager.eventsData) {
-      const eventData = window.eventsManager.eventsData.find(e => e.id == eventId);
+    // Access eventsManager from inside the iframe, not the admin window
+    const iframeWindow = elements.siteIframe && elements.siteIframe.contentWindow;
+    const eventsManager = iframeWindow && iframeWindow.eventsManager;
+    if (eventId && eventsManager && eventsManager.eventsData) {
+      const eventData = eventsManager.eventsData.find(e => e.id == eventId);
       if (eventData) {
         data.startDate = eventData.startDate;
         data.endDate = eventData.endDate;
