@@ -1,6 +1,7 @@
 [build]
   command = "npm run build && mkdir -p dist/src && cp -r src/content dist/src/ && cp -r src/js dist/src/"
   publish = "dist"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/admin/*"

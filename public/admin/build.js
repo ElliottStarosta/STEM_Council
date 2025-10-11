@@ -1,12 +1,12 @@
+
 // DOM elements
 const elements = {
-  buildOverlay: document.getElementById("buildOverlay"),
   progressBar: document.getElementById("progressBar"),
   buildLogs: document.getElementById("buildLogs"),
   buildComplete: document.getElementById("buildComplete"),
 };
 
-// Build steps for UI mapping
+// Build steps for UI
 const buildSteps = [
   { id: "step1", label: "Compiling changes" },
   { id: "step2", label: "Pushing to GitHub" },
@@ -16,83 +16,6 @@ const buildSteps = [
   { id: "step6", label: "Optimizing assets" },
   { id: "step7", label: "Deploying to CDN" },
   { id: "step8", label: "Finalizing" },
-];
-
-// Fallback simulated steps for offline testing
-const simulatedSteps = [
-  {
-    id: "step1",
-    duration: 2000,
-    logs: [
-      "> Analyzing changes...",
-      "> Found 3 modified files",
-      "✓ Compilation successful",
-    ],
-  },
-  {
-    id: "step2",
-    duration: 2000,
-    logs: [
-      "> Connecting to GitHub...",
-      "> Committing changes...",
-      "✓ Pushed to main branch",
-    ],
-  },
-  {
-    id: "step3",
-    duration: 1500,
-    logs: [
-      "> Webhook received",
-      "> Starting build process...",
-      "✓ Build triggered",
-    ],
-  },
-  {
-    id: "step4",
-    duration: 2500,
-    logs: [
-      "> npm install",
-      "> Installing dependencies...",
-      "✓ Dependencies installed",
-    ],
-  },
-  {
-    id: "step5",
-    duration: 3000,
-    logs: [
-      "> Building production bundle...",
-      "> Processing pages...",
-      "> Generating static files...",
-      "✓ Build complete",
-    ],
-  },
-  {
-    id: "step6",
-    duration: 2000,
-    logs: [
-      "> Minifying JavaScript...",
-      "> Optimizing images...",
-      "✓ Assets optimized",
-    ],
-  },
-  {
-    id: "step7",
-    duration: 2500,
-    logs: [
-      "> Uploading to CDN...",
-      "> Distributing to edge nodes...",
-      "✓ Deployed globally",
-    ],
-  },
-  {
-    id: "step8",
-    duration: 1500,
-    logs: [
-      "> Running post-deploy checks...",
-      "> Invalidating cache...",
-      "✓ Deployment successful!",
-    ],
-  },
 ];
 
 /* ==========================================
@@ -124,45 +47,26 @@ function updateStep(stepId, status) {
 }
 
 /* ==========================================
-   Trigger Netlify Build (via serverless function)
-   ========================================== */
-async function triggerNetlifyBuild() {
-  try {
-    addLog("> Triggering Netlify build...", "info");
-    
-    const response = await fetch('/.netlify/functions/trigger-build', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || 'Build trigger failed');
-    }
-
-    addLog("✓ Build hook triggered successfully", "success");
-    return true;
-  } catch (error) {
-    addLog(`✗ Failed to trigger build: ${error.message}`, "error");
-    return false;
-  }
-}
-
-/* ==========================================
-   Get Latest Deploy Status (via serverless function)
+   Get Latest Deploy Status from Netlify Function
    ========================================== */
 async function getLatestDeploy() {
   try {
-    const response = await fetch('/.netlify/functions/deploy-status');
-
+    const response = await fetch('/netlify/functions/deploy-status');
+    
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
+      console.error('Function response not OK:', response.status);
+      return null;
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // Check if there's an error in the response
+    if (data.error) {
+      console.error('Function returned error:', data.error);
+      return null;
+    }
+    
+    return data;
   } catch (error) {
     console.error('Error fetching deploy status:', error);
     return null;
@@ -170,12 +74,14 @@ async function getLatestDeploy() {
 }
 
 /* ==========================================
-   Poll Netlify Deploy Status (Real-time)
+   Poll and Track Real Netlify Deploy
    ========================================== */
-async function pollNetlifyDeploy() {
+async function trackRealDeploy() {
   let lastState = null;
   let pollCount = 0;
   const maxPolls = 120; // 10 minutes max (5 second intervals)
+  let failedAttempts = 0;
+  let buildingPhaseTime = 0;
 
   return new Promise((resolve) => {
     const pollInterval = setInterval(async () => {
@@ -183,85 +89,125 @@ async function pollNetlifyDeploy() {
 
       if (pollCount > maxPolls) {
         clearInterval(pollInterval);
-        addLog("✗ Build timeout - please check Netlify dashboard", "error");
-        resolve(false);
+        addLog("✗ Monitoring timeout reached", "error");
+        resolve('timeout');
         return;
       }
 
       const deploy = await getLatestDeploy();
       
-      if (!deploy || deploy.error) {
-        // Continue polling, might just be a temporary issue
+      // If function not available after several attempts, fall back
+      if (!deploy) {
+        failedAttempts++;
+        if (failedAttempts > 5) {
+          clearInterval(pollInterval);
+          addLog("⚠ Cannot connect to deployment status", "info");
+          resolve('fallback');
+        }
         return;
       }
 
+      // Reset failed attempts if we get data
+      failedAttempts = 0;
       const currentState = deploy.state;
 
-      // Update UI if state changed
+      // Track how long we've been in building state
+      if (currentState === 'building') {
+        buildingPhaseTime += 5000; // 5 seconds per poll
+      }
+
+      // Update UI when state changes
       if (currentState !== lastState) {
         lastState = currentState;
 
-        // Add state-specific logs
         switch (currentState) {
           case 'new':
+            addLog("> Deployment detected", "info");
+            updateStep('step1', 'completed');
+            updateStep('step2', 'completed');
+            updateStep('step3', 'active');
+            addLog("> GitHub webhook received", "info");
+            elements.progressBar.style.width = '10%';
+            break;
+
           case 'enqueued':
-            addLog("> Build enqueued, waiting to start...", "info");
+            addLog("> Build queued", "info");
             updateStep('step3', 'completed');
-            elements.progressBar.style.width = '25%';
+            addLog("> Waiting for available build slot...", "info");
+            elements.progressBar.style.width = '20%';
             break;
 
           case 'building':
-            addLog("> Build started...", "info");
+            addLog("> Build started!", "success");
             updateStep('step4', 'active');
             addLog("> Installing dependencies...", "info");
-            await new Promise(r => setTimeout(r, 1000));
-            updateStep('step4', 'completed');
-            updateStep('step5', 'active');
-            addLog("> Building production bundle...", "info");
-            elements.progressBar.style.width = '50%';
+            elements.progressBar.style.width = '35%';
             break;
 
           case 'processing':
-            addLog("> Processing build output...", "info");
+            addLog("✓ Build completed", "success");
+            updateStep('step4', 'completed');
             updateStep('step5', 'completed');
             updateStep('step6', 'active');
+            addLog("> Processing output files...", "info");
             addLog("> Optimizing assets...", "info");
             elements.progressBar.style.width = '70%';
             break;
 
           case 'uploading':
-            addLog("> Uploading to CDN...", "info");
+            addLog("✓ Assets optimized", "success");
             updateStep('step6', 'completed');
             updateStep('step7', 'active');
+            addLog("> Uploading to CDN...", "info");
+            addLog("> Distributing to edge nodes...", "info");
             elements.progressBar.style.width = '85%';
             break;
 
           case 'ready':
-            addLog("> Distributing to edge nodes...", "info");
-            await new Promise(r => setTimeout(r, 500));
+            addLog("✓ Uploaded to CDN", "success");
             updateStep('step7', 'completed');
             updateStep('step8', 'active');
-            addLog("> Running post-deploy checks...", "info");
-            await new Promise(r => setTimeout(r, 500));
-            addLog("✓ Deployment successful!", "success");
-            updateStep('step8', 'completed');
-            elements.progressBar.style.width = '100%';
+            addLog("> Running final checks...", "info");
+            elements.progressBar.style.width = '95%';
+            
+            setTimeout(() => {
+              addLog("> Invalidating cache...", "info");
+            }, 500);
+            
+            setTimeout(() => {
+              addLog("✓ Deployment successful!", "success");
+              updateStep('step8', 'completed');
+              elements.progressBar.style.width = '100%';
+              
+              setTimeout(() => {
+                elements.buildComplete.style.display = "block";
+                setTimeout(() => {
+                  window.location.href = "/";
+                }, 2000);
+              }, 500);
+            }, 1500);
             
             clearInterval(pollInterval);
-            setTimeout(() => {
-              elements.buildComplete.style.display = "block";
-              setTimeout(() => {
-                window.location.href = "/";
-              }, 2000);
-            }, 500);
-            resolve(true);
+            resolve('success');
             break;
 
           case 'error':
-            addLog(`✗ Build failed: ${deploy.error_message || 'Unknown error'}`, "error");
+            addLog(`✗ Deployment failed: ${deploy.error_message || 'Unknown error'}`, "error");
+            addLog("> Check Netlify dashboard for details", "info");
             clearInterval(pollInterval);
-            resolve(false);
+            resolve('error');
             break;
+        }
+      } else if (currentState === 'building') {
+        // Add progress updates during building phase
+        if (buildingPhaseTime === 10000) { // After 10 seconds
+          addLog("> Running build command...", "info");
+          updateStep('step4', 'completed');
+          updateStep('step5', 'active');
+          elements.progressBar.style.width = '50%';
+        } else if (buildingPhaseTime === 20000) { // After 20 seconds
+          addLog("> Compiling production bundle...", "info");
+          elements.progressBar.style.width = '60%';
         }
       }
     }, 5000); // Poll every 5 seconds
@@ -269,67 +215,53 @@ async function pollNetlifyDeploy() {
 }
 
 /* ==========================================
-   Run Real Netlify Build
-   ========================================== */
-async function runRealNetlifyBuild() {
-  // Reset UI
-  elements.buildLogs.innerHTML = "";
-  elements.progressBar.style.width = "0%";
-  elements.buildComplete.style.display = "none";
-
-  // Reset all steps
-  buildSteps.forEach((step) => {
-    const stepEl = document.getElementById(step.id);
-    stepEl.className = "build-step";
-  });
-
-  // Mark first steps as active
-  updateStep('step1', 'active');
-  addLog("> Preparing deployment...", "info");
-  await new Promise(r => setTimeout(r, 800));
-  
-  updateStep('step1', 'completed');
-  updateStep('step2', 'active');
-  addLog("> Connecting to repository...", "info");
-  await new Promise(r => setTimeout(r, 600));
-  
-  addLog("✓ Connected to GitHub", "success");
-  elements.progressBar.style.width = '10%';
-
-  // Trigger the build
-  const buildTriggered = await triggerNetlifyBuild();
-  
-  if (!buildTriggered) {
-    addLog("⚠ Could not trigger build - check Netlify configuration", "error");
-    addLog("Falling back to simulation mode...", "info");
-    await new Promise(r => setTimeout(r, 1500));
-    return runSimulatedBuild();
-  }
-
-  updateStep('step2', 'completed');
-  updateStep('step3', 'active');
-  addLog("> Waiting for build to start...", "info");
-  elements.progressBar.style.width = '15%';
-
-  // Wait a moment for Netlify to pick up the build
-  await new Promise(resolve => setTimeout(resolve, 3000));
-  
-  // Start polling for status
-  await pollNetlifyDeploy();
-}
-
-/* ==========================================
    Run Simulated Build (Fallback)
    ========================================== */
 async function runSimulatedBuild() {
-  elements.buildLogs.innerHTML = "";
-  elements.progressBar.style.width = "0%";
-  elements.buildComplete.style.display = "none";
-
-  buildSteps.forEach((step) => {
-    const stepEl = document.getElementById(step.id);
-    stepEl.className = "build-step";
-  });
+  addLog("> Running in simulation mode", "info");
+  
+  const simulatedSteps = [
+    { 
+      id: "step1", 
+      duration: 1200, 
+      logs: ["> Analyzing changes...", "✓ Changes compiled"] 
+    },
+    { 
+      id: "step2", 
+      duration: 1500, 
+      logs: ["> Connecting to GitHub...", "> Pushing changes...", "✓ Pushed to main branch"] 
+    },
+    { 
+      id: "step3", 
+      duration: 1000, 
+      logs: ["> Webhook triggered", "✓ Build initiated"] 
+    },
+    { 
+      id: "step4", 
+      duration: 2500, 
+      logs: ["> npm install", "> Installing packages...", "✓ Dependencies installed"] 
+    },
+    { 
+      id: "step5", 
+      duration: 3000, 
+      logs: ["> Building production bundle...", "> Processing pages...", "✓ Build complete"] 
+    },
+    { 
+      id: "step6", 
+      duration: 1800, 
+      logs: ["> Minifying assets...", "✓ Assets optimized"] 
+    },
+    { 
+      id: "step7", 
+      duration: 2200, 
+      logs: ["> Uploading to CDN...", "> Distributing globally...", "✓ Deployed"] 
+    },
+    { 
+      id: "step8", 
+      duration: 1200, 
+      logs: ["> Finalizing deployment...", "✓ Complete!"] 
+    },
+  ];
 
   let totalDuration = simulatedSteps.reduce((sum, step) => sum + step.duration, 0);
   let elapsedTime = 0;
@@ -341,10 +273,7 @@ async function runSimulatedBuild() {
     stepEl.classList.add("active");
 
     for (let j = 0; j < step.logs.length; j++) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, step.duration / step.logs.length)
-      );
-
+      await new Promise(r => setTimeout(r, step.duration / step.logs.length));
       const logType = j === step.logs.length - 1 ? "success" : "default";
       addLog(step.logs[j], logType);
     }
@@ -354,31 +283,71 @@ async function runSimulatedBuild() {
     stepEl.querySelector("i").className = "ri-check-line";
 
     elapsedTime += step.duration;
-    const progress = (elapsedTime / totalDuration) * 100;
-    elements.progressBar.style.width = progress + "%";
+    elements.progressBar.style.width = ((elapsedTime / totalDuration) * 100) + "%";
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise(r => setTimeout(r, 500));
   elements.buildComplete.style.display = "block";
-
-  setTimeout(() => {
-    window.location.href = "/";
-  }, 2000);
+  setTimeout(() => window.location.href = "/", 2000);
 }
 
 /* ==========================================
-   Initialize on Load
+   Main: Start Deployment Tracking
+   ========================================== */
+async function startDeploymentTracking() {
+  // Reset UI
+  elements.buildLogs.innerHTML = "";
+  elements.progressBar.style.width = "0%";
+  elements.buildComplete.style.display = "none";
+
+  // Reset all steps
+  buildSteps.forEach(step => {
+    const stepEl = document.getElementById(step.id);
+    stepEl.className = "build-step";
+  });
+
+  // Start tracking
+  updateStep('step1', 'active');
+  addLog("> Connecting to Netlify...", "info");
+  elements.progressBar.style.width = '5%';
+
+  await new Promise(r => setTimeout(r, 1000));
+
+  // Try to track real deployment
+  const result = await trackRealDeploy();
+
+  // Fall back to simulation if tracking failed
+  if (result === 'fallback') {
+    addLog("⚠ Switching to simulation mode", "info");
+    await new Promise(r => setTimeout(r, 1000));
+    
+    // Reset UI for simulation
+    elements.buildLogs.innerHTML = "";
+    elements.progressBar.style.width = "0%";
+    buildSteps.forEach(step => {
+      const stepEl = document.getElementById(step.id);
+      stepEl.className = "build-step";
+    });
+    
+    await runSimulatedBuild();
+  } else if (result === 'timeout') {
+    addLog("⚠ Build is taking longer than expected", "info");
+    addLog("> Check Netlify dashboard for status", "info");
+  }
+}
+
+/* ==========================================
+   Initialize on Page Load
    ========================================== */
 window.addEventListener("DOMContentLoaded", () => {
-  // Always try real build first, will fallback to simulation if functions aren't available
-  runRealNetlifyBuild();
+  startDeploymentTracking();
 });
 
 /* ==========================================
-   Handle Window Messages
+   Handle Messages from Parent Window
    ========================================== */
 window.addEventListener("message", (event) => {
   if (event.data === "start-build") {
-    runRealNetlifyBuild();
+    startDeploymentTracking();
   }
 });
