@@ -51,7 +51,7 @@ function updateStep(stepId, status) {
    ========================================== */
 async function getLatestDeploy() {
   try {
-    const response = await fetch('/netlify/functions/deploy-status');
+    const response = await fetch('/.netlify/functions/deploy-status');
     
     if (!response.ok) {
       console.error('Function response not OK:', response.status);
