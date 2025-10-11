@@ -79,9 +79,8 @@ async function getLatestDeploy() {
 async function trackRealDeploy() {
   let lastState = null;
   let pollCount = 0;
-  const maxPolls = 120; // 10 minutes max (5 second intervals)
+  const maxPolls = 200; // 10 minutes max (3 second intervals)
   let failedAttempts = 0;
-  let buildingPhaseTime = 0;
 
   return new Promise((resolve) => {
     const pollInterval = setInterval(async () => {
@@ -111,81 +110,73 @@ async function trackRealDeploy() {
       failedAttempts = 0;
       const currentState = deploy.state;
 
-      // Track how long we've been in building state
-      if (currentState === 'building') {
-        buildingPhaseTime += 1000; // 1 second per poll
-      }
-
       // Update UI when state changes
       if (currentState !== lastState) {
         lastState = currentState;
 
         switch (currentState) {
           case 'new':
-            addLog("> Deployment detected", "info");
+          case 'enqueued':
+            addLog("> Build queued", "info");
             updateStep('step1', 'completed');
             updateStep('step2', 'completed');
             updateStep('step3', 'active');
-            addLog("> GitHub webhook received", "info");
-            elements.progressBar.style.width = '10%';
-            break;
-
-          case 'enqueued':
-            addLog("> Build queued", "info");
-            updateStep('step3', 'completed');
-            addLog("> Waiting for available build slot...", "info");
-            elements.progressBar.style.width = '20%';
+            addLog("> Waiting for build slot...", "info");
+            elements.progressBar.style.width = '15%';
             break;
 
           case 'building':
             addLog("> Build started!", "success");
+            updateStep('step3', 'completed');
             updateStep('step4', 'active');
-            addLog("> Installing dependencies...", "info");
-            elements.progressBar.style.width = '35%';
+            addLog("> Fetching cached dependencies...", "info");
+            elements.progressBar.style.width = '30%';
+            
+            setTimeout(() => {
+              addLog("> Installing npm packages...", "info");
+              elements.progressBar.style.width = '40%';
+            }, 2000);
+            
+            setTimeout(() => {
+              addLog("> Running build command...", "info");
+              updateStep('step4', 'completed');
+              updateStep('step5', 'active');
+              elements.progressBar.style.width = '55%';
+            }, 5000);
             break;
 
           case 'processing':
             addLog("✓ Build completed", "success");
-            updateStep('step4', 'completed');
             updateStep('step5', 'completed');
             updateStep('step6', 'active');
-            addLog("> Processing output files...", "info");
-            addLog("> Optimizing assets...", "info");
+            addLog("> Bundling functions...", "info");
+            addLog("> Calculating files to upload...", "info");
             elements.progressBar.style.width = '70%';
             break;
 
           case 'uploading':
-            addLog("✓ Assets optimized", "success");
+            addLog("✓ Functions bundled", "success");
             updateStep('step6', 'completed');
             updateStep('step7', 'active');
             addLog("> Uploading to CDN...", "info");
-            addLog("> Distributing to edge nodes...", "info");
+            addLog("> Processing build output...", "info");
             elements.progressBar.style.width = '85%';
             break;
 
           case 'ready':
-            addLog("✓ Uploaded to CDN", "success");
+            addLog("✓ Deploy complete", "success");
             updateStep('step7', 'completed');
             updateStep('step8', 'active');
-            addLog("> Running final checks...", "info");
-            elements.progressBar.style.width = '95%';
+            addLog("> Site is live!", "success");
+            elements.progressBar.style.width = '100%';
             
             setTimeout(() => {
-              addLog("> Invalidating cache...", "info");
-            }, 500);
-            
-            setTimeout(() => {
-              addLog("✓ Deployment successful!", "success");
               updateStep('step8', 'completed');
-              elements.progressBar.style.width = '100%';
-              
+              elements.buildComplete.style.display = "block";
               setTimeout(() => {
-                elements.buildComplete.style.display = "block";
-                setTimeout(() => {
-                  window.location.href = "/";
-                }, 2000);
-              }, 500);
-            }, 1500);
+                window.location.href = "/";
+              }, 2000);
+            }, 1000);
             
             clearInterval(pollInterval);
             resolve('success');
@@ -198,22 +189,10 @@ async function trackRealDeploy() {
             resolve('error');
             break;
         }
-      } else if (currentState === 'building') {
-        // Add progress updates during building phase
-        if (buildingPhaseTime === 10000) { // After 10 seconds
-          addLog("> Running build command...", "info");
-          updateStep('step4', 'completed');
-          updateStep('step5', 'active');
-          elements.progressBar.style.width = '50%';
-        } else if (buildingPhaseTime === 20000) { // After 20 seconds
-          addLog("> Compiling production bundle...", "info");
-          elements.progressBar.style.width = '60%';
-        }
       }
-    }, 1000); // Poll every 1 second
+    }, 3000); // Poll every 3 seconds
   });
 }
-
 /* ==========================================
    Run Simulated Build (Fallback)
    ========================================== */
