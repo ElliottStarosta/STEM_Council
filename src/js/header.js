@@ -1,16 +1,32 @@
 function initHeader() {
   // Register GSAP and ScrollToPlugin at the top
-  if (typeof gsap !== 'undefined' && typeof ScrollToPlugin !== 'undefined') {
+  if (typeof gsap !== "undefined" && typeof ScrollToPlugin !== "undefined") {
     gsap.registerPlugin(ScrollToPlugin);
+  }
+
+  // First, remove any conflicting CSS animations from logo
+  const logoImage = document.querySelector('.logo-image');
+  if (logoImage) {
+    logoImage.style.animation = 'none';
   }
 
   // Initialize GSAP timeline with enhanced settings
   const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
+  // Clear any existing transforms first
+  gsap.set([".header", ".logo-image", ".logo-main", ".logo-subtitle"], { clearProps: "transform,opacity" });
+
   // Set initial states explicitly with more dramatic starting positions
   gsap.set(".header", { y: -120, opacity: 1 });
-  gsap.set(".logo-main", { opacity: 1, x: 0, y: 0, scale: 1 }); // Make sure logo is visible
-  gsap.set(".logo-subtitle", { opacity: 0.8, x: 0, y: 0, scale: 1 }); // Make subtitle semi-visible
+  gsap.set(".logo-image", { 
+    opacity: 0, 
+    x: -60, 
+    scale: 0.7, 
+    rotation: -15,
+    immediateRender: true // Force initial state
+  }); // Logo image starts off-screen
+  gsap.set(".logo-main", { opacity: 0, x: -80, scale: 0.8 }); // Text starts hidden
+  gsap.set(".logo-subtitle", { opacity: 0, x: -60, scale: 0.8 }); // Subtitle starts hidden
 
   // Set up desktop nav animation BEFORE main timeline (desktop only)
   if (window.innerWidth > 768) {
@@ -25,51 +41,85 @@ function initHeader() {
   }
 
   // Enhanced Header entrance animation - simplified to avoid conflicts
-  tl.to(".header", {
+   tl.to(".header", {
     duration: 1.2,
     y: 0,
     ease: "power4.out",
     delay: 0.4,
   })
-    .from(
-      ".logo-main",
-      {
-        duration: 1.0,
-        x: -80,
-        opacity: 0,
-        scale: 0.8,
-        ease: "power3.out",
-      },
-      "-=0.8"
-    )
-    .to(
-      ".logo-subtitle",
-      {
-        duration: 0.8,
-        opacity: 0.8, // Keep it visible
-        ease: "power3.out",
-      },
-      "-=0.4"
-    );
+  // Animate logo image first - wait for it to complete
+  .to(
+    ".logo-image",
+    {
+      duration: 0.1,
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      rotation: 0,
+      ease: "expo.out",
+    }
+  )
+  // Then animate main text - starts AFTER logo completes
+  .to(
+    ".logo-main",
+    {
+      duration: 0.2,
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      ease: "back.out(3)",
+    },
+    "+=0.05" // Small delay after logo completes
+  )
+  // Finally animate subtitle - starts AFTER main text
+  .to(
+    ".logo-subtitle",
+    {
+      duration: 0.15,
+      x: 0,
+      opacity: 0.8,
+      scale: 1,
+      ease: "elastic.out(1, 0.5)",
+    },
+    "+=0.1" // Small delay after main text completes
+  )
+  // Callback to re-enable CSS float animation after GSAP finishes
+  .call(() => {
+    // Re-enable the float animation after 1 second
+    setTimeout(() => {
+      if (logoImage) {
+        logoImage.style.animation = 'logo-float-header 6s ease-in-out infinite';
+        logoImage.classList.add('loaded');
+      }
+    }, 1000);
+  });
 
   // Only animate hamburger on desktop (hide it)
   if (window.innerWidth > 768) {
-    tl.to(".hamburger", {
-      duration: 0.6,
-      scale: 0,
-      opacity: 0,
-      rotation: 180,
-      ease: "back.out(2.5)",
-    }, "-=0.4");
+    tl.to(
+      ".hamburger",
+      {
+        duration: 0.6,
+        scale: 0,
+        opacity: 0,
+        rotation: 180,
+        ease: "back.out(2.5)",
+      },
+      "-=0.4"
+    );
   } else {
     // On mobile, ensure hamburger is visible
-    tl.to(".hamburger", {
-      duration: 0.6,
-      scale: 1,
-      opacity: 1,
-      rotation: 0,
-      ease: "back.out(2.5)",
-    }, "-=0.4");
+    tl.to(
+      ".hamburger",
+      {
+        duration: 0.6,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+        ease: "back.out(2.5)",
+      },
+      "-=0.4"
+    );
   }
 
   // Enhanced Desktop nav items animation - ensure they stay visible
@@ -185,28 +235,37 @@ function initHeader() {
   const logoSubtitle = document.querySelector(".logo-subtitle");
 
   logo.addEventListener("mouseenter", function () {
-    // Enhanced main logo animation
-    gsap.to(logoMain, {
+    // Enhanced logo image animation
+    gsap.to(logoImage, {
       duration: 0.6,
-      y: -12,
-      scale: 1.08,
-      rotationY: 8,
-      ease: "back.out(1.5)",
+      y: -8,
+      scale: 1.15,
+      rotation: 8,
+      ease: "back.out(1.7)",
+    });
+
+    // Enhanced main text animation
+    gsap.to(logoMain, {
+      duration: 0.5,
+      x: 6,
+      color: "#389342", // accent-dark-green
+      ease: "back.out(1.3)",
     });
 
     // Enhanced subtitle animation
     gsap.to(logoSubtitle, {
       duration: 0.5,
-      opacity: 0.9,
-      y: -6,
-      scale: 1.15,
+      x: 6,
+      opacity: 1,
+      color: "#247e0c", // primary-green
+      scale: 1.05,
       ease: "back.out(1.3)",
     });
 
-    // Enhanced pulse effect
+    // Pulse effect on entire logo
     gsap.to(logo, {
       duration: 0.15,
-      scale: 1.03,
+      scale: 1.02,
       ease: "power2.out",
       yoyo: true,
       repeat: 1,
@@ -214,19 +273,32 @@ function initHeader() {
   });
 
   logo.addEventListener("mouseleave", function () {
-    gsap.to([logoMain, logoSubtitle], {
+    gsap.to(logoImage, {
       duration: 0.6,
-      scale: 1,
-      rotationY: 0,
-      x: 0,
       y: 0,
+      scale: 1,
+      rotation: 0,
       ease: "power3.out",
     });
 
-    // Keep subtitle visible
+    gsap.to([logoMain, logoSubtitle], {
+      duration: 0.6,
+      x: 0,
+      scale: 1,
+      ease: "power3.out",
+    });
+
+    // Reset text colors
+    gsap.to(logoMain, {
+      duration: 0.6,
+      color: "#247e0c", // primary-green
+      ease: "power3.out",
+    });
+
     gsap.to(logoSubtitle, {
       duration: 0.6,
       opacity: 0.8,
+      color: "#6c757d", // text-secondary
       ease: "power3.out",
     });
   });
@@ -315,7 +387,11 @@ function initHeader() {
       scrollDownDistance += scrollDelta;
 
       // Hide header after scrolling down the threshold distance
-      if (scrollDownDistance >= hideThreshold && !headerHidden && currentScrollY > 50) {
+      if (
+        scrollDownDistance >= hideThreshold &&
+        !headerHidden &&
+        currentScrollY > 50
+      ) {
         gsap.to(header, {
           duration: 0.4,
           y: -120,
@@ -331,14 +407,17 @@ function initHeader() {
       }
 
       // Show header immediately when scrolling up more than threshold OR when near top
-      if ((Math.abs(scrollDelta) >= showThreshold || currentScrollY <= 100) && headerHidden) {
+      if (
+        (Math.abs(scrollDelta) >= showThreshold || currentScrollY <= 100) &&
+        headerHidden
+      ) {
         gsap.to(header, {
           duration: 0.5,
           y: 0,
           ease: "back.out(1.2)",
         });
         headerHidden = false;
-        
+
         // Hide scroll to top button when header appears
         if (scrollToTopButton) {
           scrollToTopButton.classList.remove("visible");
@@ -354,7 +433,7 @@ function initHeader() {
         ease: "back.out(1.2)",
       });
       headerHidden = false;
-      
+
       // Hide scroll to top button when at the top
       if (scrollToTopButton) {
         scrollToTopButton.classList.remove("visible");
@@ -379,7 +458,7 @@ function initHeader() {
       gsap.to(window, {
         duration: 1.2,
         scrollTo: { y: 0 },
-        ease: "power3.out"
+        ease: "power3.out",
       });
     });
   }
@@ -461,8 +540,8 @@ function initHeader() {
   setTimeout(setHamburgerVisibility, 500);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initHeader);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initHeader);
 } else {
   initHeader();
 }

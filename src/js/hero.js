@@ -127,7 +127,7 @@ function initHeroAnimations() {
     }, null, "-=0.2"); // Underline starts while adjective is still animating in
     
     // Add to main timeline with stagger
-    tl.add(adjectiveTL, index * 0.6);
+    tl.add(adjectiveTL, index * 0.6 );
   });
 
   // Continue with description AFTER adjectives
