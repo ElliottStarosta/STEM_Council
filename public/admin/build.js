@@ -9,13 +9,12 @@ const elements = {
 // Build steps for UI
 const buildSteps = [
   { id: "step1", label: "Compiling changes" },
-  { id: "step2", label: "Pushing to GitHub" },
-  { id: "step3", label: "Triggering build" },
-  { id: "step4", label: "Installing dependencies" },
-  { id: "step5", label: "Building site" },
-  { id: "step6", label: "Optimizing assets" },
-  { id: "step7", label: "Deploying to CDN" },
-  { id: "step8", label: "Finalizing" },
+  { id: "step2", label: "Triggering build" },
+  { id: "step3", label: "Installing dependencies" },
+  { id: "step4", label: "Building site" },
+  { id: "step5", label: "Optimizing assets" },
+  { id: "step6", label: "Deploying to CDN" },
+  { id: "step7", label: "Finalizing" },
 ];
 
 /* ==========================================
