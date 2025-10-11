@@ -20,6 +20,235 @@ function initClubsSection() {
   createClubsParticles();
   initClubsAnimations();
   initClubInteractions();
+  initClubsCarousel();
+}
+
+function initClubsCarousel() {
+  const clubsSection = document.querySelector(".clubs-section");
+  if (!clubsSection) return;
+  
+  const clubCards = document.querySelectorAll(".club-card");
+  const clubsGrid = document.querySelector(".clubs-grid");
+  const prevBtn = document.querySelector(".clubs-carousel-container .prev-btn");
+  const nextBtn = document.querySelector(".clubs-carousel-container .next-btn");
+  const indicatorDots = document.querySelector(".clubs-indicator .indicator-dots");
+  
+  if (!clubCards.length || !clubsGrid || !prevBtn || !nextBtn || !indicatorDots) {
+    console.error('Carousel elements not found');
+    return;
+  }
+  
+  let currentSlide = 0;
+  let slidesPerView = getClubsSlidesPerView();
+  let totalSlides = Math.ceil(clubCards.length / slidesPerView);
+  let isAnimating = false;
+  
+  // Create indicator dots
+  createClubIndicatorDots();
+  
+  // Animate carousel controls entrance
+  gsap.to([prevBtn, nextBtn], {
+    opacity: 1,
+    y: 0,
+    duration: 0.5,
+    stagger: 0.1,
+    delay: 0.8,
+    ease: "power2.out"
+  });
+  
+  // Add event listeners
+  window.addEventListener("resize", handleClubsResize);
+  prevBtn.addEventListener("click", goToPrevClubSlide);
+  nextBtn.addEventListener("click", goToNextClubSlide);
+  
+  // Initialize carousel
+  updateClubsCarouselState();
+  updateClubsVisibility();
+  
+  function handleClubsResize() {
+    const newSlidesPerView = getClubsSlidesPerView();
+    
+    if (newSlidesPerView !== slidesPerView) {
+      slidesPerView = newSlidesPerView;
+      totalSlides = Math.ceil(clubCards.length / slidesPerView);
+      
+      currentSlide = 0;
+      updateClubsCarouselState();
+      createClubIndicatorDots();
+      updateClubsVisibility();
+      
+      // Reset transform
+      gsap.set(clubsGrid, { x: 0 });
+    }
+  }
+  
+  function updateClubsVisibility() {
+    clubCards.forEach((card, index) => {
+      const slideIndex = Math.floor(index / slidesPerView);
+      const isVisible = slideIndex === currentSlide;
+      
+      if (!isVisible) {
+        card.style.visibility = 'hidden';
+        card.style.opacity = '0';
+      } else {
+        card.style.visibility = 'visible';
+        card.style.opacity = '1';
+      }
+    });
+  }
+  
+  function createClubIndicatorDots() {
+    indicatorDots.innerHTML = "";
+    
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement("div");
+      dot.classList.add("indicator-dot");
+      
+      gsap.set(dot, {
+        opacity: 0,
+        scale: 0.5
+      });
+      
+      if (i === currentSlide) {
+        dot.classList.add("active");
+      }
+      
+      dot.addEventListener("click", () => {
+        if (isAnimating || i === currentSlide) return;
+        
+        gsap.fromTo(dot, 
+          { scale: 1 },
+          { 
+            scale: 1.2, 
+            duration: 0.2, 
+            ease: "power2.out",
+            onComplete: () => {
+              gsap.to(dot, { 
+                scale: 1, 
+                duration: 0.2, 
+                ease: "power2.in" 
+              });
+            }
+          }
+        );
+        
+        currentSlide = i;
+        updateClubsCarouselState();
+        animateClubsCarousel();
+      });
+      
+      indicatorDots.appendChild(dot);
+      
+      gsap.to(dot, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.3,
+        delay: 0.9 + (0.05 * i),
+        ease: "back.out(1.7)"
+      });
+    }
+  }
+  
+  function updateActiveClubIndicator() {
+    const dots = document.querySelectorAll(".clubs-indicator .indicator-dot");
+    
+    dots.forEach((dot, index) => {
+      if (index === currentSlide) {
+        if (!dot.classList.contains("active")) {
+          dot.classList.add("active");
+          
+          gsap.fromTo(dot, 
+            { scale: 1 },
+            { 
+              scale: 1.2, 
+              duration: 0.2, 
+              ease: "power2.out",
+              onComplete: () => {
+                gsap.to(dot, { 
+                  scale: 1, 
+                  duration: 0.2, 
+                  ease: "power2.in" 
+                });
+              }
+            }
+          );
+        }
+      } else {
+        if (dot.classList.contains("active")) {
+          gsap.to(dot, {
+            scale: 0.9,
+            duration: 0.2,
+            ease: "power2.in",
+            onComplete: () => {
+              dot.classList.remove("active");
+              gsap.to(dot, { scale: 1, duration: 0.2 });
+            }
+          });
+        } else {
+          dot.classList.remove("active");
+        }
+      }
+    });
+  }
+  
+  function goToPrevClubSlide() {
+    if (isAnimating || currentSlide === 0) return;
+    
+    currentSlide--;
+    updateClubsCarouselState();
+    animateClubsCarousel();
+  }
+  
+  function goToNextClubSlide() {
+    if (isAnimating || currentSlide >= totalSlides - 1) return;
+    
+    currentSlide++;
+    updateClubsCarouselState();
+    animateClubsCarousel();
+  }
+  
+  function animateClubsCarousel() {
+    isAnimating = true;
+    
+    const firstCard = clubCards[0];
+    if (!firstCard) {
+      isAnimating = false;
+      return;
+    }
+    
+    const slideWidth = firstCard.offsetWidth;
+    const gap = parseFloat(getComputedStyle(clubsGrid).gap) || 32;
+    const translateX = -currentSlide * (slideWidth + gap) * slidesPerView;
+    
+    gsap.to(clubsGrid, {
+      x: translateX,
+      duration: 0.6,
+      ease: "power2.out",
+      onComplete: () => {
+        isAnimating = false;
+        updateActiveClubIndicator();
+        updateClubsVisibility();
+      }
+    });
+  }
+  
+  function updateClubsCarouselState() {
+    prevBtn.disabled = currentSlide === 0;
+    nextBtn.disabled = currentSlide >= totalSlides - 1;
+    
+    prevBtn.style.opacity = prevBtn.disabled ? 0.3 : 1;
+    nextBtn.style.opacity = nextBtn.disabled ? 0.3 : 1;
+    
+    updateActiveClubIndicator();
+  }
+  
+  function getClubsSlidesPerView() {
+    const width = window.innerWidth;
+    
+    if (width <= 768) return 1;
+    if (width <= 1200) return 2;
+    return 3;
+  }
 }
 
 // Particles Animation
@@ -66,7 +295,6 @@ function createClubsParticles() {
 
 // GSAP Scroll Animations
 function initClubsAnimations() {
-  // Register ScrollTrigger plugin
   gsap.registerPlugin(ScrollTrigger);
   
   // Animate section header
@@ -88,7 +316,7 @@ function initClubsAnimations() {
     }
   );
   
-  // Animate club cards with stagger
+  // Animate club cards with stagger (for carousel)
   gsap.fromTo('.club-card',
     {
       opacity: 0,
@@ -101,14 +329,39 @@ function initClubsAnimations() {
       scale: 1,
       duration: 0.8,
       ease: "power2.out",
-      stagger: 0.2,
+      stagger: 0.15,
       scrollTrigger: {
-        trigger: '.clubs-grid',
+        trigger: '.clubs-carousel-container',
         start: 'top 75%',
         toggleActions: "play none none reverse"
       }
     }
   );
+  
+  // Animate carousel controls
+  const carouselControls = document.querySelectorAll(".clubs-carousel-container .carousel-control");
+  if (carouselControls.length > 0) {
+    gsap.set(carouselControls, {
+      opacity: 0,
+      y: 20
+    });
+    
+    ScrollTrigger.create({
+      trigger: '.clubs-carousel-container',
+      start: 'top 75%',
+      onEnter: () => {
+        gsap.to(carouselControls, {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          stagger: 0.1,
+          delay: 0.5,
+          ease: "power2.out"
+        });
+      },
+      once: true
+    });
+  }
   
   // Animate decorative elements
   gsap.fromTo('.decoration-circle-1',
@@ -356,6 +609,7 @@ async function loadClubsContent() {
       gsap.set('.club-card', { opacity: 0, y: 40, scale: 0.95 });
     }
 
+    // Initialize clubs section with carousel
     initClubsSection();
 
     if (typeof ScrollTrigger !== 'undefined') {
@@ -365,3 +619,5 @@ async function loadClubsContent() {
     console.error('Error loading clubs content:', error);
   }
 }
+
+window.initClubsCarousel = initClubsCarousel;

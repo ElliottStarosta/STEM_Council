@@ -1680,11 +1680,20 @@ function insertNewMarkdownCard(type, data, filename) {
       <div class="club-card-glow"></div>
     `;
     grid.appendChild(card);
-
+  
     // Make sure the new card is visible (bypass initial animation states)
     card.style.opacity = "1";
     card.style.transform = "translateY(0)";
-
+  
+    // REINITIALIZE THE CAROUSEL after adding new card
+    if (iframeWindow && typeof iframeWindow.initClubsCarousel === 'function') {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        iframeWindow.initClubsCarousel();
+        console.log('Clubs carousel reinitialized after adding new club');
+      }, 100);
+    }
+  
     // Create overlay/edit controls for this new card
     createMarkdownEditOverlay(card, "club");
   }

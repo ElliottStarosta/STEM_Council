@@ -43,6 +43,24 @@
   pointer-events: none;
 }
 
+.clubs-carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 2rem;
+  pointer-events: auto;
+}
+
+.clubs-grid-container {
+  width: 90%;
+  overflow: hidden;
+  position: relative;
+  pointer-events: auto;
+}
+
+
 /* Particles Background */
 .particles-bg {
   position: absolute;
@@ -85,17 +103,20 @@
 
 /* Clubs Grid */
 .clubs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
+  transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   gap: 2rem;
-  margin-top: 3rem;
-  pointer-events: auto;
+  overflow: visible;
   position: relative;
-  z-index: 10;
+  pointer-events: auto;
+  margin-top: 0;
+  padding: 1.5rem 0;
 }
 
 /* Club Cards */
 .club-card {
+  flex: 0 0 calc(33.33% - 1.33rem);
+  min-width: 300px;
   position: relative;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -111,6 +132,86 @@
   pointer-events: auto;
   box-shadow: 0 8px 32px rgba(19, 172, 24, 0.596), 0 4px 16px rgba(31, 138, 31, 0.05);
 }
+
+.clubs-carousel-container .carousel-control {
+  background: var(--accent-dark-green-dark);
+  color: var(--secondary-yellow);
+  border: 1px solid var(--primary-green);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  z-index: 15;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.clubs-carousel-container .prev-btn {
+  left: 0;
+}
+
+.clubs-carousel-container .next-btn {
+  right: 0;
+}
+
+.clubs-carousel-container .carousel-control:hover:not(:disabled) {
+  background: var(--primary-green);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(42, 166, 76, 0.4);
+}
+
+.clubs-carousel-container .carousel-control:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.clubs-carousel-container .carousel-control i {
+  font-size: 1.5rem;
+}
+
+
+.clubs-indicator {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  pointer-events: auto;
+}
+
+.clubs-indicator .indicator-dots {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.clubs-indicator .indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgba(66, 166, 76, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.clubs-indicator .indicator-dot.active {
+  background-color: var(--secondary-yellow);
+  width: 24px;
+  border-radius: 5px;
+}
+
+.clubs-indicator .indicator-dot:hover {
+  background-color: rgba(66, 166, 76, 0.6);
+}
+
 
 .club-card:hover {
   transform: translateY(-10px);
@@ -296,7 +397,30 @@
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 1.5rem;
   }
+
+  .clubs-carousel-container .carousel-control {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .club-card {
+    flex: 0 0 calc(33.33% - 1.33rem);
+    min-width: 280px;
+  }
 }
+
+@media (max-width: 1200px) {
+  .club-card {
+    flex: 0 0 calc(50% - 1rem);
+    min-width: 300px;
+  }
+  
+  .clubs-grid-container {
+    width: 88%;
+  }
+}
+
+
 
 @media (max-width: 768px) {
   .clubs-section {
@@ -343,6 +467,28 @@
   .decoration-circle-2 {
     width: 100px;
     height: 100px;
+  }
+
+  .club-card {
+    flex: 0 0 100%;
+    min-width: 100%;
+  }
+
+  .clubs-grid-container {
+    width: 85%;
+  }
+  
+  .clubs-carousel-container .carousel-control {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .clubs-carousel-container .carousel-control i {
+    font-size: 1.2rem;
+  }
+  
+  .clubs-indicator {
+    margin-top: 1.5rem;
   }
 }
 
@@ -394,6 +540,36 @@
   .decoration-circle-2 {
     width: 80px;
     height: 80px;
+  }
+
+  .clubs-carousel-container .prev-btn {
+    left: -10px;
+  }
+  
+  .clubs-carousel-container .next-btn {
+    right: -10px;
+  }
+  
+  .clubs-grid-container {
+    width: 80%;
+  }
+  
+  .clubs-carousel-container .carousel-control {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .clubs-indicator .indicator-dots {
+    gap: 6px;
+  }
+  
+  .clubs-indicator .indicator-dot {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .clubs-indicator .indicator-dot.active {
+    width: 20px;
   }
 }
 
@@ -447,6 +623,42 @@
     width: 60px;
     height: 60px;
   }
+
+  .clubs-carousel-container .prev-btn {
+    left: -15px;
+  }
+  
+  .clubs-carousel-container .next-btn {
+    right: -15px;
+  }
+  
+  .clubs-grid-container {
+    width: 75%;
+  }
+}
+
+
+@media (max-width: 400px) {
+  .clubs-carousel-container .prev-btn {
+    left: -20px;
+  }
+  
+  .clubs-carousel-container .next-btn {
+    right: -20px;
+  }
+  
+  .clubs-grid-container {
+    width: 70%;
+  }
+  
+  .clubs-carousel-container .carousel-control {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .clubs-carousel-container .carousel-control i {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 375px) {
@@ -498,6 +710,18 @@
   .decoration-circle-2 {
     width: 50px;
     height: 50px;
+  }
+
+  .clubs-carousel-container .prev-btn {
+    left: -25px;
+  }
+  
+  .clubs-carousel-container .next-btn {
+    right: -25px;
+  }
+  
+  .clubs-grid-container {
+    width: 65%;
   }
 }
 
@@ -551,6 +775,36 @@
     width: 40px;
     height: 40px;
   }
+
+  .clubs-carousel-container .prev-btn {
+    left: -30px;
+  }
+  
+  .clubs-carousel-container .next-btn {
+    right: -30px;
+  }
+  
+  .clubs-grid-container {
+    width: 60%;
+  }
+  
+  .clubs-carousel-container .carousel-control {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .clubs-indicator .indicator-dots {
+    gap: 4px;
+  }
+  
+  .clubs-indicator .indicator-dot {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .clubs-indicator .indicator-dot.active {
+    width: 16px;
+  }
 }
 
 /* Touch device optimizations */
@@ -568,7 +822,85 @@
   .clubs-section {
     -webkit-overflow-scrolling: touch;
   }
+
+
+  .clubs-carousel-container .carousel-control {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .clubs-indicator .indicator-dot {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .clubs-indicator .indicator-dot::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background-color: inherit;
+    border-radius: inherit;
+  }
+  
+  .clubs-indicator .indicator-dot.active::before {
+    width: 24px;
+  }
+  
+  .clubs-carousel-container .carousel-control:hover {
+    transform: translateY(-50%);
+    background: var(--accent-dark-green-dark);
+  }
+  
+  .clubs-carousel-container .carousel-control:active {
+    background: var(--primary-green);
+    transform: translateY(-50%) scale(0.95);
+  }
 }
+
+.carousel-animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.clubs-carousel-container .carousel-control.animate-in {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+/* Smooth visibility transitions for carousel */
+.club-card.hidden-slide {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s 0.3s, opacity 0.3s ease;
+}
+
+.club-card.visible-slide {
+  visibility: visible;
+  opacity: 1;
+  transition: visibility 0s, opacity 0.3s ease;
+}
+
+.clubs-carousel-container .carousel-control:focus {
+  outline: 3px solid var(--secondary-yellow);
+  outline-offset: 3px;
+}
+
+.clubs-carousel-container .carousel-control:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.clubs-indicator .indicator-dot:focus {
+  outline: 3px solid var(--secondary-yellow);
+  outline-offset: 3px;
+}
+
+.clubs-indicator .indicator-dot:focus:not(:focus-visible) {
+  outline: none;
+}
+
 
 /* Landscape mobile optimizations */
 @media (max-height: 500px) and (orientation: landscape) {
@@ -583,6 +915,23 @@
   .clubs-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-base);
+  }
+
+  .clubs-carousel-container {
+    margin-bottom: 1rem;
+  }
+  
+  .clubs-indicator {
+    margin-top: 1rem;
+  }
+  
+  .clubs-carousel-container .carousel-control {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .club-card {
+    flex: 0 0 calc(50% - 1rem);
   }
 }
 
@@ -602,6 +951,22 @@
   
   .club-icon:hover {
     transform: none;
+  }
+
+  .clubs-grid {
+    transition: none;
+  }
+  
+  .clubs-carousel-container .carousel-control {
+    transition: none;
+  }
+  
+  .clubs-indicator .indicator-dot {
+    transition: none;
+  }
+  
+  .club-card {
+    transition: none;
   }
 }
 
