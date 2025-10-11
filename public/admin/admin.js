@@ -705,6 +705,8 @@ function extractMarkdownData(element, type) {
 }
 
 // Remix Icon Picker
+
+let savedSocialLinks = [];
 const iconCategories = {
   'Common': ['star-line', 'star-fill', 'heart-line', 'heart-fill', 'home-line', 'home-fill', 'user-line', 'user-fill', 'settings-line', 'settings-fill', 'search-line', 'menu-line', 'close-line', 'check-line', 'checkbox-line', 'checkbox-circle-line', 'arrow-right-line', 'arrow-left-line', 'arrow-up-line', 'arrow-down-line', 'add-line', 'subtract-line', 'more-line', 'more-2-line', 'apps-line', 'dashboard-line', 'grid-line', 'layout-grid-line'],
   
@@ -786,7 +788,6 @@ function createIconPicker() {
     content.appendChild(section);
   }
   
-  // Search functionality
   // Search functionality in openIconPicker function
 document.getElementById('iconSearch').addEventListener('input', (e) => {
   const search = e.target.value.toLowerCase();
@@ -842,6 +843,16 @@ document.getElementById('iconSearch').addEventListener('input', (e) => {
 function openIconPicker(inputElement) {
   currentIconInput = inputElement;
   
+  // SAVE ALL SOCIAL LINK DATA BEFORE OPENING
+  savedSocialLinks = [];
+  document.querySelectorAll('.social-link-group').forEach((group, idx) => {
+    savedSocialLinks[idx] = {
+      type: group.querySelector('[data-field="type"]')?.value || '',
+      url: group.querySelector('[data-field="url"]')?.value || '',
+      icon: group.querySelector('[data-field="icon"]')?.value || ''
+    };
+  });
+  
   // Store current scroll position
   const modalContentEl = document.querySelector('.modal-content');
   if (modalContentEl) {
@@ -862,12 +873,12 @@ function openIconPicker(inputElement) {
   
    // Set consistent height and remove modal-content overflow to prevent double scrollbar
   modalContentEl.style.overflow = 'hidden';
-  modalContentEl.style.height = '80vh'; // Fixed height
+  modalContentEl.style.height = '80vh';
   modalContentEl.style.maxHeight = '80vh';
 
    // Make icon-picker-content fill available space
   const iconContent = document.getElementById('iconContent');
-  iconContent.style.maxHeight = 'calc(80vh - 165px)'; // Subtract space for title, search, and padding
+  iconContent.style.maxHeight = 'calc(80vh - 165px)';
   
   
   // Store original content to restore later
@@ -896,88 +907,82 @@ function openIconPicker(inputElement) {
     content.appendChild(section);
   }
   
-  // Search functionality in openIconPicker function
-document.getElementById('iconSearch').addEventListener('input', (e) => {
-  const search = e.target.value.toLowerCase();
-  
-  if (!search) {
-    // No search - show original categorized layout
-    content.innerHTML = '';
-    for (const [category, icons] of Object.entries(iconCategories)) {
-      const section = document.createElement('div');
-      section.innerHTML = `<div class="icon-picker-category-title">${category}</div>`;
-      
-      const grid = document.createElement('div');
-      grid.className = 'icon-picker-grid';
-      
-      icons.forEach(icon => {
-        const item = document.createElement('div');
-        item.className = 'icon-picker-item';
-        item.innerHTML = `<i class="ri-${icon}"></i>`;
-        item.dataset.icon = `ri-${icon}`;
-        item.onclick = () => selectIcon(`ri-${icon}`);
-        grid.appendChild(item);
-      });
-      
-      section.appendChild(grid);
-      content.appendChild(section);
-    }
+  // Search functionality
+  document.getElementById('iconSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
     
-    // Highlight currently selected icon
-    const currentIcon = inputElement.value;
-    document.querySelectorAll('.icon-picker-item').forEach(item => {
-      item.classList.toggle('selected', item.dataset.icon === currentIcon);
-    });
-  } else {
-    // Search active - show flat filtered results
-    const matchedIcons = [];
-    
-    // Collect all matching icons
-    for (const [category, icons] of Object.entries(iconCategories)) {
-      icons.forEach(icon => {
-        const iconName = `ri-${icon}`.toLowerCase();
-        if (iconName.includes(search)) {
-          matchedIcons.push(icon);
-        }
-      });
-    }
-    
-    // Clear and show only matched results
-    content.innerHTML = '';
-    
-    if (matchedIcons.length === 0) {
-      const noResultsMsg = document.createElement('div');
-      noResultsMsg.className = 'no-results-message';
-      noResultsMsg.innerHTML = `
-        <i class="ri-search-line" style="font-size: 48px; color: #666; margin-bottom: 12px;"></i>
-        <p style="color: #888; font-size: 16px; margin: 0;">No icons found matching "${search}"</p>
-        <p style="color: #666; font-size: 14px; margin-top: 8px;">Try a different search term</p>
-      `;
-      content.appendChild(noResultsMsg);
-    } else {
-      const grid = document.createElement('div');
-      grid.className = 'icon-picker-grid';
-      grid.style.marginBottom = '0';
+    if (!search) {
+      content.innerHTML = '';
+      for (const [category, icons] of Object.entries(iconCategories)) {
+        const section = document.createElement('div');
+        section.innerHTML = `<div class="icon-picker-category-title">${category}</div>`;
+        
+        const grid = document.createElement('div');
+        grid.className = 'icon-picker-grid';
+        
+        icons.forEach(icon => {
+          const item = document.createElement('div');
+          item.className = 'icon-picker-item';
+          item.innerHTML = `<i class="ri-${icon}"></i>`;
+          item.dataset.icon = `ri-${icon}`;
+          item.onclick = () => selectIcon(`ri-${icon}`);
+          grid.appendChild(item);
+        });
+        
+        section.appendChild(grid);
+        content.appendChild(section);
+      }
       
-      matchedIcons.forEach(icon => {
-        const item = document.createElement('div');
-        item.className = 'icon-picker-item';
-        item.innerHTML = `<i class="ri-${icon}"></i>`;
-        item.dataset.icon = `ri-${icon}`;
-        item.onclick = () => selectIcon(`ri-${icon}`);
-        grid.appendChild(item);
-      });
-      
-      content.appendChild(grid);
-      
-      // Highlight currently selected icon
       const currentIcon = inputElement.value;
       document.querySelectorAll('.icon-picker-item').forEach(item => {
         item.classList.toggle('selected', item.dataset.icon === currentIcon);
       });
+    } else {
+      const matchedIcons = [];
+      
+      for (const [category, icons] of Object.entries(iconCategories)) {
+        icons.forEach(icon => {
+          const iconName = `ri-${icon}`.toLowerCase();
+          if (iconName.includes(search)) {
+            matchedIcons.push(icon);
+          }
+        });
+      }
+      
+      content.innerHTML = '';
+      
+      if (matchedIcons.length === 0) {
+        const noResultsMsg = document.createElement('div');
+        noResultsMsg.className = 'no-results-message';
+        noResultsMsg.innerHTML = `
+          <i class="ri-search-line" style="font-size: 48px; color: #666; margin-bottom: 12px;"></i>
+          <p style="color: #888; font-size: 16px; margin: 0;">No icons found matching "${search}"</p>
+          <p style="color: #666; font-size: 14px; margin-top: 8px;">Try a different search term</p>
+        `;
+        content.appendChild(noResultsMsg);
+      } else {
+        const grid = document.createElement('div');
+        grid.className = 'icon-picker-grid';
+        grid.style.marginBottom = '0';
+        
+        matchedIcons.forEach(icon => {
+          const item = document.createElement('div');
+          item.className = 'icon-picker-item';
+          item.innerHTML = `<i class="ri-${icon}"></i>`;
+          item.dataset.icon = `ri-${icon}`;
+          item.onclick = () => selectIcon(`ri-${icon}`);
+          grid.appendChild(item);
+        });
+        
+        content.appendChild(grid);
+        
+        const currentIcon = inputElement.value;
+        document.querySelectorAll('.icon-picker-item').forEach(item => {
+          item.classList.toggle('selected', item.dataset.icon === currentIcon);
+        });
+      }
     }
-  }
-});
+  });
   
   
   // Hide the save/cancel buttons temporarily
@@ -1021,45 +1026,44 @@ window.closeIconPicker = function() {
 
 function selectIcon(iconClass) {
   if (currentIconInput) {
-    // Store reference - could be by ID or by element reference
-    const targetInputId = currentIconInput.id;
-    const isDirectReference = !targetInputId;
+    const targetGroup = currentIconInput.closest('.social-link-group');
+    const targetGroupIndex = targetGroup ? targetGroup.dataset.index : null;
     
-    // Store the parent wrapper to find elements after DOM reload
-    const parentWrapper = currentIconInput.closest('.icon-picker-input-wrapper');
-    const parentGroup = currentIconInput.closest('.social-link-group');
-    const groupIndex = parentGroup ? parentGroup.dataset.index : null;
+    // Update the saved data with the new icon
+    if (targetGroupIndex !== null && savedSocialLinks[targetGroupIndex]) {
+      savedSocialLinks[targetGroupIndex].icon = iconClass;
+    }
     
-    // Close and restore the original form first
+    // Close and restore
     closeIconPicker();
     
-    // Now update the input and preview in the restored form
+    // Restore ALL social link data after form reloads
     setTimeout(() => {
-      let restoredInput;
-      let preview;
-      
-      if (isDirectReference) {
-        // For social link icons, find by the group index
-        if (groupIndex !== null) {
-          const restoredGroup = document.querySelector(`.social-link-group[data-index="${groupIndex}"]`);
-          if (restoredGroup) {
-            restoredInput = restoredGroup.querySelector('input[data-field="icon"]');
-            preview = restoredGroup.querySelector('.icon-preview i');
+      document.querySelectorAll('.social-link-group').forEach((group, idx) => {
+        if (savedSocialLinks[idx]) {
+          const typeInput = group.querySelector('[data-field="type"]');
+          const urlInput = group.querySelector('[data-field="url"]');
+          const iconInput = group.querySelector('[data-field="icon"]');
+          
+          if (typeInput) typeInput.value = savedSocialLinks[idx].type;
+          if (urlInput) urlInput.value = savedSocialLinks[idx].url;
+          if (iconInput) iconInput.value = savedSocialLinks[idx].icon;
+          
+          const preview = group.querySelector('.icon-preview i');
+          if (preview && iconInput) {
+            preview.className = iconInput.value;
           }
         }
-      } else {
-        // For main icon with ID
-        restoredInput = document.getElementById(targetInputId);
-        const wrapper = restoredInput?.closest('.icon-picker-input-wrapper');
-        preview = wrapper?.querySelector('.icon-preview i');
-      }
+      });
       
-      if (restoredInput) {
-        restoredInput.value = iconClass;
-      }
-      
-      if (preview) {
-        preview.className = iconClass;
+      // Also restore main form fields
+      const formValues = {};
+      if (elements.modalForm.dataset.formValues) {
+        Object.assign(formValues, JSON.parse(elements.modalForm.dataset.formValues));
+        Object.keys(formValues).forEach(id => {
+          const input = document.getElementById(id);
+          if (input) input.value = formValues[id];
+        });
       }
     }, 10);
   }
