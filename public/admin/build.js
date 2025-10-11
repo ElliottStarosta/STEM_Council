@@ -113,7 +113,7 @@ async function trackRealDeploy() {
 
       // Track how long we've been in building state
       if (currentState === 'building') {
-        buildingPhaseTime += 5000; // 5 seconds per poll
+        buildingPhaseTime += 1000; // 1 second per poll
       }
 
       // Update UI when state changes
@@ -210,7 +210,7 @@ async function trackRealDeploy() {
           elements.progressBar.style.width = '60%';
         }
       }
-    }, 5000); // Poll every 5 seconds
+    }, 1000); // Poll every 1 second
   });
 }
 
