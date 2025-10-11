@@ -337,7 +337,7 @@ body {
   max-height: 400px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 4px 5px 60px 5px; /* Added bottom padding */
+  padding: 4px 5px 0px 5px; /* Added bottom padding */
 }
 
 .icon-picker-content::-webkit-scrollbar {
@@ -624,6 +624,15 @@ body {
 .image-input-group .form-input,
 .tag-input-group .form-input {
   flex: 1;
+}
+
+.no-results-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
 }
 
 .social-link-group .icon-picker-input-wrapper {

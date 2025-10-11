@@ -96,6 +96,7 @@ function stopPositionTracking() {
 function initIframeIntegration() {
   elements.siteIframe.addEventListener("load", () => {
     console.log("Site loaded in iframe");
+    injectAdminStyles(); 
     if (adminState.editMode) {
       scanEditableContent();
       scanMarkdownContent();
@@ -343,29 +344,44 @@ window.openMarkdownCreateModal = function (type) {
     isNew: true,
   };
 
-  elements.modalForm.innerHTML = buildMarkdownForm(type, {});
+  // Provide default data for new clubs and resources
+  const defaultData = type === 'club' ? {
+    socialLinks: [
+      { type: 'Discord', url: '', icon: 'ri-discord-line' },
+      { type: 'Instagram', url: '', icon: 'ri-instagram-line' },
+      { type: 'Email', url: '', icon: 'ri-mail-line' }
+    ]
+  } : type === 'resource' ? {
+    tags: []
+  } : {};
+
+  elements.modalForm.innerHTML = buildMarkdownFormWithIconPicker(type, defaultData);
   elements.editModal.classList.add("active");
 };
 
 // Create editable highlight
 function createEditableHighlight(element) {
-  const iframeWindow = elements.siteIframe.contentWindow;
+  const iframeDoc = elements.siteIframe.contentDocument;
+  if (!iframeDoc) return;
+
   const rect = element.getBoundingClientRect();
 
-  const highlight = document.createElement("div");
+  const highlight = iframeDoc.createElement("div");
   highlight.className = "editable-highlight";
 
-  // Position relative to viewport, accounting for iframe scroll
-  highlight.style.top = rect.top + 15 + "px";
+  // Position relative to the element's position in the iframe
+  highlight.style.position = "absolute";
+  highlight.style.top = rect.top + iframeDoc.documentElement.scrollTop + "px";
   highlight.style.left = rect.left + "px";
   highlight.style.width = rect.width + "px";
   highlight.style.height = rect.height + "px";
-  highlight.style.pointerEvents = "none"; // Don't block scrolling
+  highlight.style.pointerEvents = "none";
+  highlight.style.zIndex = "9999";
 
-  const editBtn = document.createElement("div");
+  const editBtn = iframeDoc.createElement("div");
   editBtn.className = "edit-button";
   editBtn.innerHTML = '<i class="ri-edit-line"></i>';
-  editBtn.style.pointerEvents = "auto"; // Button accepts clicks
+  editBtn.style.pointerEvents = "auto";
   highlight.appendChild(editBtn);
 
   editBtn.addEventListener("click", (e) => {
@@ -373,21 +389,189 @@ function createEditableHighlight(element) {
     openEditModal(element);
   });
 
-  elements.editOverlay.appendChild(highlight);
+  iframeDoc.body.appendChild(highlight);
   adminState.editableRegions.push({ element, highlight });
 }
 
-function createMarkdownEditOverlay(element, type) {
-  const iframeRect = elements.siteIframe.getBoundingClientRect();
+// In updateHighlightPositions function, replace the forEach loop:
+adminState.editableRegions.forEach(({ element, highlight, overlay, type }) => {
   const iframeDoc = elements.siteIframe.contentDocument;
-  const iframeWindow = elements.siteIframe.contentWindow;
-
-  // Get element position relative to iframe viewport
+  if (!iframeDoc) return;
+  
   const rect = element.getBoundingClientRect();
 
+  if (highlight && !type) { // Regular JSON highlights (inside iframe)
+    highlight.style.top = rect.top + iframeDoc.documentElement.scrollTop + "px";
+    highlight.style.left = rect.left + "px";
+    highlight.style.width = rect.width + "px";
+    highlight.style.height = rect.height + "px";
+    highlight.style.pointerEvents = "none";
+  }
+
+  if (overlay) { // Markdown overlays (stay in parent window)
+    const iframeRect = elements.siteIframe.getBoundingClientRect();
+    overlay.style.top = iframeRect.top + rect.top + "px";
+    overlay.style.left = iframeRect.left + rect.left + "px";
+    overlay.style.width = rect.width + "px";
+    overlay.style.height = rect.height + "px";
+    overlay.style.pointerEvents = "none";
+
+    const buttonGroup = overlay.querySelector(".markdown-edit-buttons");
+    if (buttonGroup) {
+      buttonGroup.style.pointerEvents = "auto";
+    }
+  }
+});
+
+function injectAdminStyles() {
+  const iframeDoc = elements.siteIframe.contentDocument;
+  if (!iframeDoc) return;
+
+  if (iframeDoc.getElementById('admin-overlay-styles')) return;
+
+  const styleTag = iframeDoc.createElement('style');
+  styleTag.id = 'admin-overlay-styles';
+  styleTag.textContent = `
+    /* Admin Overlay Styles - Isolated from main site */
+    .editable-highlight {
+      position: absolute;
+      border: 2px dashed #42a64c;
+      background: rgba(66, 166, 76, 0.08);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+      z-index: 99999 !important;
+    }
+
+    .editable-highlight:hover {
+      background: rgba(66, 166, 76, 0.15);
+      border-style: solid;
+      border-color: #247e0c;
+      box-shadow: 0 0 16px rgba(36, 126, 12, 0.3);
+    }
+
+    .edit-button {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 28px;
+      height: 28px;
+      background: #247e0c;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(36, 126, 12, 0.4);
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+
+    .edit-button:hover {
+      transform: scale(1.1) rotate(15deg);
+      background: #42a64c;
+    }
+
+    .edit-button i {
+      color: white;
+      font-size: 14px;
+    }
+
+    /* Markdown Edit Overlays */
+    .markdown-edit-overlay {
+      position: absolute;
+      border: 2px dashed #42a64c;
+      background: rgba(66, 166, 143, 0.08);
+      pointer-events: none;
+      z-index: 99999 !important;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+    }
+
+    .markdown-edit-overlay:hover {
+      background: rgba(66, 166, 76, 0.15);
+      border-color: #247e0c;
+      border-style: solid;
+      box-shadow: 0 0 20px rgba(36, 126, 12, 0.3);
+    }
+
+    .markdown-edit-overlay-yellow {
+      border: 2px dashed #cdb82d;
+      background: rgba(205, 184, 45, 0.08);
+    }
+
+    .markdown-edit-overlay-yellow:hover {
+      background: rgba(205, 184, 45, 0.15);
+      border-color: #b8a428;
+      border-style: solid;
+      box-shadow: 0 0 20px rgba(205, 184, 45, 0.3);
+    }
+
+    .markdown-edit-buttons {
+      position: absolute;
+      top: -15px;
+      right: -15px;
+      display: flex;
+      gap: 8px;
+      pointer-events: auto !important;
+    }
+
+    .markdown-edit-buttons * {
+      pointer-events: auto !important;
+    }
+
+    .markdown-edit-btn,
+    .markdown-delete-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .markdown-edit-btn {
+      background: #247e0c;
+    }
+
+    .markdown-edit-btn:hover {
+      transform: scale(1.1) rotate(15deg);
+      background: #42a64c;
+    }
+
+    .markdown-delete-btn {
+      background: #dc3545;
+    }
+
+    .markdown-delete-btn:hover {
+      transform: scale(1.1) rotate(15deg);
+      background: #ff4757;
+    }
+
+    .markdown-edit-btn i,
+    .markdown-delete-btn i {
+      color: white;
+      font-size: 14px;
+    }
+  `;
+
+  iframeDoc.head.appendChild(styleTag);
+}
+
+function createMarkdownEditOverlay(element, type) {
+  const iframeDoc = elements.siteIframe.contentDocument;
+  if (!iframeDoc) return;
+
+  const rect = element.getBoundingClientRect();
   const filename = element.dataset.markdownFile;
 
-  const overlay = document.createElement("div");
+  const overlay = iframeDoc.createElement("div");
   overlay.className = "markdown-edit-overlay";
 
   // Add yellow class only for clubs
@@ -395,20 +579,21 @@ function createMarkdownEditOverlay(element, type) {
     overlay.classList.add("markdown-edit-overlay-yellow");
   }
 
-  // Position relative to parent window: iframe position + element position in iframe
-  // Don't add scroll offset here - getBoundingClientRect already accounts for scroll
-  overlay.style.top = iframeRect.top + rect.top + "px";
-  overlay.style.left = iframeRect.left + rect.left + "px";
+  // Position absolutely within the iframe
+  overlay.style.position = "absolute";
+  overlay.style.top = rect.top + iframeDoc.documentElement.scrollTop + "px";
+  overlay.style.left = rect.left + "px";
   overlay.style.width = rect.width + "px";
   overlay.style.height = rect.height + "px";
   overlay.style.pointerEvents = "none";
+  overlay.style.zIndex = "9999";
 
-  const buttonGroup = document.createElement("div");
+  const buttonGroup = iframeDoc.createElement("div");
   buttonGroup.className = "markdown-edit-buttons";
-  buttonGroup.style.pointerEvents = "auto"; // Make buttons clickable
+  buttonGroup.style.pointerEvents = "auto";
 
-  // Edit button with circular style
-  const editBtn = document.createElement("div");
+  // Edit button
+  const editBtn = iframeDoc.createElement("div");
   editBtn.className = "markdown-edit-btn";
   editBtn.innerHTML = '<i class="ri-edit-line"></i>';
   editBtn.style.pointerEvents = "auto";
@@ -417,8 +602,8 @@ function createMarkdownEditOverlay(element, type) {
     openMarkdownEditModal(element, type, filename);
   };
 
-  // Delete button with circular style
-  const deleteBtn = document.createElement("div");
+  // Delete button
+  const deleteBtn = iframeDoc.createElement("div");
   deleteBtn.className = "markdown-delete-btn";
   deleteBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
   deleteBtn.style.pointerEvents = "auto";
@@ -431,7 +616,7 @@ function createMarkdownEditOverlay(element, type) {
   buttonGroup.appendChild(deleteBtn);
   overlay.appendChild(buttonGroup);
 
-  elements.editOverlay.appendChild(overlay);
+  iframeDoc.body.appendChild(overlay);
   adminState.editableRegions.push({ element, overlay, type: "markdown" });
 }
 
@@ -602,20 +787,56 @@ function createIconPicker() {
   }
   
   // Search functionality
-  document.getElementById('iconSearch').addEventListener('input', (e) => {
-    const search = e.target.value.toLowerCase();
-    const allSections = content.querySelectorAll('.icon-picker-grid').length > 0;
-    
-    document.querySelectorAll('.icon-picker-item').forEach(item => {
-      const iconName = item.dataset.icon.toLowerCase();
-      item.style.display = iconName.includes(search) ? 'flex' : 'none';
-    });
-    
-    // Hide category titles if searching
-    document.querySelectorAll('.icon-picker-category-title').forEach(title => {
-      title.style.display = search ? 'none' : 'block';
-    });
+  // Search functionality in openIconPicker function
+document.getElementById('iconSearch').addEventListener('input', (e) => {
+  const search = e.target.value.toLowerCase();
+  let visibleCount = 0;
+  
+  document.querySelectorAll('.icon-picker-item').forEach(item => {
+    const iconName = item.dataset.icon.toLowerCase();
+    const isVisible = iconName.includes(search);
+    item.style.display = isVisible ? 'flex' : 'none';
+    if (isVisible) visibleCount++;
   });
+  
+  // Hide category titles and sections when searching
+  document.querySelectorAll('.icon-picker-category-title').forEach(title => {
+    const section = title.parentElement;
+    if (search) {
+      title.style.display = 'none';
+      // Remove margin from grids when searching
+      const grid = section.querySelector('.icon-picker-grid');
+      if (grid) {
+        grid.style.marginBottom = '8px';
+      }
+    } else {
+      title.style.display = 'block';
+      // Restore margin when not searching
+      const grid = section.querySelector('.icon-picker-grid');
+      if (grid) {
+        grid.style.marginBottom = '24px';
+      }
+    }
+  });
+  
+  // Show/hide "no results" message
+  let noResultsMsg = content.querySelector('.no-results-message');
+  if (visibleCount === 0 && search) {
+    if (!noResultsMsg) {
+      noResultsMsg = document.createElement('div');
+      noResultsMsg.className = 'no-results-message';
+      noResultsMsg.innerHTML = `
+        <i class="ri-search-line" style="font-size: 48px; color: #666; margin-bottom: 12px;"></i>
+        <p style="color: #888; font-size: 16px; margin: 0;">No icons found matching "${search}"</p>
+        <p style="color: #666; font-size: 14px; margin-top: 8px;">Try a different search term</p>
+      `;
+      content.appendChild(noResultsMsg);
+    }
+    noResultsMsg.style.display = 'flex';
+  } else if (noResultsMsg) {
+    noResultsMsg.style.display = 'none';
+  }
+});
 }
 
 function openIconPicker(inputElement) {
@@ -632,15 +853,22 @@ function openIconPicker(inputElement) {
   const modalContent = elements.modalForm.innerHTML;
   const modalTitle = document.querySelector('.modal-title').textContent;
   
-  // Replace modal content with icon picker - NOW WITH SEARCH BAR
+
   document.querySelector('.modal-title').textContent = 'Choose Icon';
   elements.modalForm.innerHTML = `
     <input type="text" class="icon-picker-search" placeholder="Search icons..." id="iconSearch">
     <div class="icon-picker-content" id="iconContent"></div>
   `;
   
-  // Remove modal-content overflow to prevent double scrollbar
+   // Set consistent height and remove modal-content overflow to prevent double scrollbar
   modalContentEl.style.overflow = 'hidden';
+  modalContentEl.style.height = '80vh'; // Fixed height
+  modalContentEl.style.maxHeight = '80vh';
+
+   // Make icon-picker-content fill available space
+  const iconContent = document.getElementById('iconContent');
+  iconContent.style.maxHeight = 'calc(80vh - 165px)'; // Subtract space for title, search, and padding
+  
   
   // Store original content to restore later
   elements.modalForm.dataset.originalContent = modalContent;
@@ -668,26 +896,89 @@ function openIconPicker(inputElement) {
     content.appendChild(section);
   }
   
-  // Search functionality
-  document.getElementById('iconSearch').addEventListener('input', (e) => {
-    const search = e.target.value.toLowerCase();
-    
-    document.querySelectorAll('.icon-picker-item').forEach(item => {
-      const iconName = item.dataset.icon.toLowerCase();
-      item.style.display = iconName.includes(search) ? 'flex' : 'none';
-    });
-    
-    // Hide category titles if searching
-    document.querySelectorAll('.icon-picker-category-title').forEach(title => {
-      title.style.display = search ? 'none' : 'block';
-    });
-  });
+  // Search functionality in openIconPicker function
+document.getElementById('iconSearch').addEventListener('input', (e) => {
+  const search = e.target.value.toLowerCase();
   
-  // Highlight currently selected icon
-  const currentIcon = inputElement.value;
-  document.querySelectorAll('.icon-picker-item').forEach(item => {
-    item.classList.toggle('selected', item.dataset.icon === currentIcon);
-  });
+  if (!search) {
+    // No search - show original categorized layout
+    content.innerHTML = '';
+    for (const [category, icons] of Object.entries(iconCategories)) {
+      const section = document.createElement('div');
+      section.innerHTML = `<div class="icon-picker-category-title">${category}</div>`;
+      
+      const grid = document.createElement('div');
+      grid.className = 'icon-picker-grid';
+      
+      icons.forEach(icon => {
+        const item = document.createElement('div');
+        item.className = 'icon-picker-item';
+        item.innerHTML = `<i class="ri-${icon}"></i>`;
+        item.dataset.icon = `ri-${icon}`;
+        item.onclick = () => selectIcon(`ri-${icon}`);
+        grid.appendChild(item);
+      });
+      
+      section.appendChild(grid);
+      content.appendChild(section);
+    }
+    
+    // Highlight currently selected icon
+    const currentIcon = inputElement.value;
+    document.querySelectorAll('.icon-picker-item').forEach(item => {
+      item.classList.toggle('selected', item.dataset.icon === currentIcon);
+    });
+  } else {
+    // Search active - show flat filtered results
+    const matchedIcons = [];
+    
+    // Collect all matching icons
+    for (const [category, icons] of Object.entries(iconCategories)) {
+      icons.forEach(icon => {
+        const iconName = `ri-${icon}`.toLowerCase();
+        if (iconName.includes(search)) {
+          matchedIcons.push(icon);
+        }
+      });
+    }
+    
+    // Clear and show only matched results
+    content.innerHTML = '';
+    
+    if (matchedIcons.length === 0) {
+      const noResultsMsg = document.createElement('div');
+      noResultsMsg.className = 'no-results-message';
+      noResultsMsg.innerHTML = `
+        <i class="ri-search-line" style="font-size: 48px; color: #666; margin-bottom: 12px;"></i>
+        <p style="color: #888; font-size: 16px; margin: 0;">No icons found matching "${search}"</p>
+        <p style="color: #666; font-size: 14px; margin-top: 8px;">Try a different search term</p>
+      `;
+      content.appendChild(noResultsMsg);
+    } else {
+      const grid = document.createElement('div');
+      grid.className = 'icon-picker-grid';
+      grid.style.marginBottom = '0';
+      
+      matchedIcons.forEach(icon => {
+        const item = document.createElement('div');
+        item.className = 'icon-picker-item';
+        item.innerHTML = `<i class="ri-${icon}"></i>`;
+        item.dataset.icon = `ri-${icon}`;
+        item.onclick = () => selectIcon(`ri-${icon}`);
+        grid.appendChild(item);
+      });
+      
+      content.appendChild(grid);
+      
+      // Highlight currently selected icon
+      const currentIcon = inputElement.value;
+      document.querySelectorAll('.icon-picker-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.icon === currentIcon);
+      });
+    }
+  }
+});
+  
   
   // Hide the save/cancel buttons temporarily
   elements.modalSaveBtn.style.display = 'none';
@@ -704,9 +995,11 @@ window.closeIconPicker = function() {
     elements.modalForm.innerHTML = originalContent;
     document.querySelector('.modal-title').textContent = originalTitle;
     
-    // Restore modal-content overflow
+    // Restore modal-content overflow and remove fixed height
     const modalContentEl = document.querySelector('.modal-content');
     modalContentEl.style.overflow = 'auto';
+    modalContentEl.style.height = '';
+    modalContentEl.style.maxHeight = '80vh';
     
     // Restore scroll position
     if (scrollPosition !== undefined) {
@@ -999,43 +1292,65 @@ function openMarkdownCreateModal(type) {
     isNew: true,
   };
 
-  elements.modalForm.innerHTML = buildMarkdownFormWithIconPicker(type, {});
+  // Provide default data for new clubs
+  const defaultData = type === 'club' ? {
+    socialLinks: [
+      { type: 'Discord', url: '', icon: 'ri-discord-line' },
+      { type: 'Instagram', url: '', icon: 'ri-instagram-line' },
+      { type: 'Email', url: '', icon: 'ri-mail-line' }
+    ]
+  } : {};
+
+  elements.modalForm.innerHTML = buildMarkdownFormWithIconPicker(type, defaultData);
   elements.editModal.classList.add("active");
 }
 
 // Update highlight positions on scroll
 function updateHighlightPositions() {
   try {
-    const iframeRect = elements.siteIframe.getBoundingClientRect();
+    const iframeDoc = elements.siteIframe.contentDocument;
+    if (!iframeDoc) return;
 
-    adminState.editableRegions.forEach(
-      ({ element, highlight, overlay, type }) => {
-        const rect = element.getBoundingClientRect();
+    adminState.editableRegions.forEach(({ element, highlight, overlay, type }) => {
+      // Check if element is visible
+      const isVisible = element.offsetParent !== null && 
+                       window.getComputedStyle(element).display !== 'none' &&
+                       window.getComputedStyle(element).visibility !== 'hidden' &&
+                       window.getComputedStyle(element).opacity !== '0';
 
-        if (highlight) {
-          highlight.style.top = rect.top + 15 + "px";
-          highlight.style.left = rect.left + "px";
-          highlight.style.width = rect.width + "px";
-          highlight.style.height = rect.height + "px";
-          highlight.style.pointerEvents = "none";
+      const rect = element.getBoundingClientRect();
+
+      if (highlight && !type) { // Regular JSON highlights
+        if (!isVisible) {
+          highlight.style.display = 'none';
+          return;
         }
+        highlight.style.display = 'block';
+        highlight.style.top = rect.top + iframeDoc.documentElement.scrollTop + "px";
+        highlight.style.left = rect.left + "px";
+        highlight.style.width = rect.width + "px";
+        highlight.style.height = rect.height + "px";
+        highlight.style.pointerEvents = "none";
+      }
 
-        if (overlay) {
-          // Position relative to parent window: iframe position + element position in iframe
-          overlay.style.top = iframeRect.top + rect.top + "px";
-          overlay.style.left = iframeRect.left + rect.left + "px";
-          overlay.style.width = rect.width + "px";
-          overlay.style.height = rect.height + "px";
-          overlay.style.pointerEvents = "none";
+      if (overlay && type === "markdown") { // Markdown overlays
+        if (!isVisible) {
+          overlay.style.display = 'none';
+          return;
+        }
+        overlay.style.display = 'block';
+        overlay.style.top = rect.top + iframeDoc.documentElement.scrollTop + "px";
+        overlay.style.left = rect.left + "px";
+        overlay.style.width = rect.width + "px";
+        overlay.style.height = rect.height + "px";
+        overlay.style.pointerEvents = "none";
 
-          // Ensure buttons are clickable
-          const buttonGroup = overlay.querySelector(".markdown-edit-buttons");
-          if (buttonGroup) {
-            buttonGroup.style.pointerEvents = "auto";
-          }
+        const buttonGroup = overlay.querySelector(".markdown-edit-buttons");
+        if (buttonGroup) {
+          buttonGroup.style.pointerEvents = "auto";
         }
       }
-    );
+    });
   } catch (e) {
     console.error("Error updating positions:", e);
   }
