@@ -8,6 +8,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>STEM Council</title>
+  <link rel="icon" href="/src/images/logo.png" type="image/png">
+
   <link rel="stylesheet" href="/src/css/style.css" />
   <link rel="stylesheet" href="/src/css/header.css" />
   <link rel="stylesheet" href="/src/css/hero.css" />
@@ -33,12 +35,12 @@
     <div class="container">
       <div class="header-content">
         <div class="logo">
-  <img src="/src/images/logo.png" alt="STEM Council Logo" class="logo-image">
-  <div class="logo-text">
-    <span class="logo-main">STEM Council</span>
-    <span class="logo-subtitle">Earl of March S.S.</span>
-  </div>
-</div>
+          <img src="/src/images/logo.png" alt="STEM Council Logo" class="logo-image">
+          <div class="logo-text">
+            <span class="logo-main">STEM Council</span>
+            <span class="logo-subtitle">Earl of March S.S.</span>
+          </div>
+        </div>
 
         <!-- Hamburger Menu Button -->
         <button class="hamburger" aria-label="Toggle navigation menu">
@@ -415,141 +417,140 @@
       </div>
     </div>
   </section>
- <section class="clubs-section" id="clubs">
-  <div class="clubs-container">
-    <!-- Particles Background -->
-    <div class="particles-bg" id="clubs-particles"></div>
+  <section class="clubs-section" id="clubs">
+    <div class="clubs-container">
+      <!-- Particles Background -->
+      <div class="particles-bg" id="clubs-particles"></div>
 
-    <!-- Section Header -->
-    <div class="clubs-header">
-      <h2 class="clubs-title">STEM Clubs</h2>
-      <p class="clubs-subtitle">Explore our vibrant community of innovative minds and cutting-edge projects</p>
-    </div>
-
-    <!-- Clubs Carousel Container -->
-    <div class="clubs-carousel-container">
-      <button class="carousel-control prev-btn" aria-label="Previous clubs">
-        <i class="ri-arrow-left-s-line"></i>
-      </button>
-      
-      <div class="clubs-grid-container">
-        <div class="clubs-grid">
-          <!-- Clubs will be loaded here dynamically -->
-        </div>
+      <!-- Section Header -->
+      <div class="clubs-header">
+        <h2 class="clubs-title">STEM Clubs</h2>
+        <p class="clubs-subtitle">Explore our vibrant community of innovative minds and cutting-edge projects</p>
       </div>
-      
-      <button class="carousel-control next-btn" aria-label="Next clubs">
-        <i class="ri-arrow-right-s-line"></i>
-      </button>
-    </div>
 
-    <!-- Indicator Dots -->
-    <div class="clubs-indicator">
-      <div class="indicator-dots"></div>
-    </div>
-
-    <!-- Decorative Elements -->
-    <div class="clubs-decoration">
-      <div class="decoration-circle decoration-circle-1"></div>
-      <div class="decoration-circle decoration-circle-2"></div>
-      <div class="decoration-line decoration-line-1"></div>
-      <div class="decoration-line decoration-line-2"></div>
-    </div>
-  </div>
-</section>
-
-  <!-- Events Section -->
-<!-- Events Section -->
-<section class="events" id="events">
-  <div class="events-container">
-    <!-- Header -->
-    <div class="events-header">
-      <h2 class="events-title">Upcoming Events</h2>
-      <div class="events-subtitle">
-        Discover amazing STEM opportunities and connect with fellow Lions
-      </div>
-    </div>
-
-    <!-- Events Carousel Container -->
-    <div class="events-carousel-container">
-      <button class="carousel-control prev-btn" aria-label="Previous events">
-        <i class="ri-arrow-left-s-line"></i>
-      </button>
-      
-      <div class="events-grid-container">
-        <div class="events-grid" id="eventsGrid">
-          <!-- Events will be populated by JavaScript -->
-        </div>
-      </div>
-      
-      <button class="carousel-control next-btn" aria-label="Next events">
-        <i class="ri-arrow-right-s-line"></i>
-      </button>
-    </div>
-
-    <!-- Indicator Dots -->
-    <div class="events-indicator">
-      <div class="indicator-dots"></div>
-    </div>
-
-    <!-- Event Modal -->
-    <div class="event-modal" id="eventModal">
-      <div class="modal-overlay" id="modalOverlay"></div>
-      <div class="modal-content">
-        <button class="modal-close" id="modalClose">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+      <!-- Clubs Carousel Container -->
+      <div class="clubs-carousel-container">
+        <button class="carousel-control prev-btn" aria-label="Previous clubs">
+          <i class="ri-arrow-left-s-line"></i>
         </button>
 
-        <div class="modal-header">
-          <h3 class="modal-title" id="modalTitle"></h3>
-          <div class="modal-date" id="modalDate"></div>
+        <div class="clubs-grid-container">
+          <div class="clubs-grid">
+            <!-- Clubs will be loaded here dynamically -->
+          </div>
         </div>
 
-        <div class="modal-body">
-          <div class="modal-carousel" id="modalCarousel">
-            <div class="carousel-container">
-              <div class="carousel-slides" id="carouselSlides"></div>
-              <button class="carousel-btn carousel-prev" id="carouselPrev">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="15,18 9,12 15,6"></polyline>
-                </svg>
-              </button>
-              <button class="carousel-btn carousel-next" id="carouselNext">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9,18 15,12 9,6"></polyline>
-                </svg>
-              </button>
-            </div>
-            <div class="carousel-dots" id="carouselDots"></div>
+        <button class="carousel-control next-btn" aria-label="Next clubs">
+          <i class="ri-arrow-right-s-line"></i>
+        </button>
+      </div>
+
+      <!-- Indicator Dots -->
+      <div class="clubs-indicator">
+        <div class="indicator-dots"></div>
+      </div>
+
+      <!-- Decorative Elements -->
+      <div class="clubs-decoration">
+        <div class="decoration-circle decoration-circle-1"></div>
+        <div class="decoration-circle decoration-circle-2"></div>
+        <div class="decoration-line decoration-line-1"></div>
+        <div class="decoration-line decoration-line-2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Events Section -->
+  <section class="events" id="events">
+    <div class="events-container">
+      <!-- Header -->
+      <div class="events-header">
+        <h2 class="events-title">Upcoming Events</h2>
+        <div class="events-subtitle">
+          Discover amazing STEM opportunities and connect with fellow Lions
+        </div>
+      </div>
+
+      <!-- Events Carousel Container -->
+      <div class="events-carousel-container">
+        <button class="carousel-control prev-btn" aria-label="Previous events">
+          <i class="ri-arrow-left-s-line"></i>
+        </button>
+
+        <div class="events-grid-container">
+          <div class="events-grid" id="eventsGrid">
+            <!-- Events will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <button class="carousel-control next-btn" aria-label="Next events">
+          <i class="ri-arrow-right-s-line"></i>
+        </button>
+      </div>
+
+      <!-- Indicator Dots -->
+      <div class="events-indicator">
+        <div class="indicator-dots"></div>
+      </div>
+
+      <!-- Event Modal -->
+      <div class="event-modal" id="eventModal">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+          <button class="modal-close" id="modalClose">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
+          <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle"></h3>
+            <div class="modal-date" id="modalDate"></div>
           </div>
 
-          <div class="modal-description" id="modalDescription"></div>
+          <div class="modal-body">
+            <div class="modal-carousel" id="modalCarousel">
+              <div class="carousel-container">
+                <div class="carousel-slides" id="carouselSlides"></div>
+                <button class="carousel-btn carousel-prev" id="carouselPrev">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15,18 9,12 15,6"></polyline>
+                  </svg>
+                </button>
+                <button class="carousel-btn carousel-next" id="carouselNext">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9,18 15,12 9,6"></polyline>
+                  </svg>
+                </button>
+              </div>
+              <div class="carousel-dots" id="carouselDots"></div>
+            </div>
+
+            <div class="modal-description" id="modalDescription"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Background Elements -->
+      <div class="events-bg">
+        <div class="events-particles">
+          <div class="particle particle-1"></div>
+          <div class="particle particle-2"></div>
+          <div class="particle particle-3"></div>
+          <div class="particle particle-4"></div>
+          <div class="particle particle-5"></div>
+          <div class="particle particle-6"></div>
+          <div class="particle particle-7"></div>
+          <div class="particle particle-8"></div>
+          <div class="particle particle-9"></div>
+          <div class="particle particle-10"></div>
+          <div class="particle particle-11"></div>
+          <div class="particle particle-12"></div>
         </div>
       </div>
     </div>
-
-    <!-- Background Elements -->
-    <div class="events-bg">
-      <div class="events-particles">
-        <div class="particle particle-1"></div>
-        <div class="particle particle-2"></div>
-        <div class="particle particle-3"></div>
-        <div class="particle particle-4"></div>
-        <div class="particle particle-5"></div>
-        <div class="particle particle-6"></div>
-        <div class="particle particle-7"></div>
-        <div class="particle particle-8"></div>
-        <div class="particle particle-9"></div>
-        <div class="particle particle-10"></div>
-        <div class="particle particle-11"></div>
-        <div class="particle particle-12"></div>
-      </div>
-    </div>
-  </div>
-</section>
+  </section>
   <section class="resources" id="resources">
     <div class="container">
       <div class="resources-header">
