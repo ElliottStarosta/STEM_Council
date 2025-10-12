@@ -16,12 +16,13 @@
 * [Deployment](#deployment)
 * [Configuration](#configuration)
 * [Troubleshooting](#troubleshooting)
+* [Support](#support)
 
 ---
 
 ## Introduction
 
-**STEM Council** is a modern, interactive website for the Earl of March Secondary School STEM Council. Built with cutting-edge web technologies, it provides an engaging platform for students to explore Science, Technology, Engineering, and Math opportunities through clubs, events, and hands-on activities.
+**STEM Council** is a modern, interactive website for the Earl of March Secondary School (EOM) STEM Council. The website provides a platform for students to explore Science, Technology, Engineering, and Math opportunities through clubs, events, and hands-on activities at EOM
 
 The website features dynamic content management, interactive animations, and a responsive design that showcases the innovative spirit of our STEM community.
 
@@ -39,9 +40,10 @@ The website features dynamic content management, interactive animations, and a r
 ### Dynamic Content Management
 
 * **Netlify CMS integration** for easy content updates
+* **Markdown support** for rich text content in events, clubs, and resources
 * **JSON-based content system** for flexible data management
-* **Markdown support** for text content in events
-* **Real-time content updates** without code changes: supports Markdown and JSON
+* **Real-time content updates** without code changes
+* **Serverless functions** for advanced content operations
 
 ### Interactive STEM Elements
 
@@ -66,7 +68,8 @@ The website features dynamic content management, interactive animations, and a r
 * **Animations**: GSAP (GreenSock Animation Platform)
 * **Icons**: RemixIcon for consistent iconography
 * **Fonts**: Fontshare API for modern typography
-* **Content Management**: Netlify CMS
+* **Content Management**: Netlify CMS with Markdown support
+* **Serverless Functions**: Netlify Functions for backend operations
 * **Deployment**: Netlify with continuous deployment
 * **Version Control**: Git with GitHub integration
 
@@ -80,15 +83,32 @@ STEM_Council/
 │   └── admin/                 # Netlify CMS admin interface
 │       ├── config.yml         # CMS configuration
 │       ├── index.html         # Admin interface
-│       └── admin.css          # Admin styling
+│       ├── admin.css          # Admin styling
+│       ├── admin.js           # Admin JavaScript
+│       ├── build.css          # Build-specific styles
+│       ├── build.html         # Build interface
+│       └── build.js           # Build functionality
 ├── src/
 │   ├── content/               # Dynamic content files
 │   │   ├── clubs/            # Club information (Markdown)
+│   │   │   ├── arduino-club.md
+│   │   │   ├── computer-science-club.md
+│   │   │   └── [other clubs].md
 │   │   ├── events/           # Event details (Markdown)
+│   │   │   ├── 2025-07-15-summer-tech-conference-2025.md
+│   │   │   ├── 2025-08-05-green-innovation-workshop.md
+│   │   │   └── [other events].md
 │   │   ├── resources/        # Learning resources (Markdown)
+│   │   │   ├── 3blue1brown-mathematics.md
+│   │   │   ├── cs50-introduction-computer-science.md
+│   │   │   ├── desmos-graphing-calculator.md
+│   │   │   ├── organic-chem-tutor.md
+│   │   │   └── waterloo-math-contests.md
 │   │   ├── about.json        # About section data
 │   │   ├── hero.json         # Hero section data
-│   │   └── contact.json      # Contact information
+│   │   ├── contact.json      # Contact information
+│   │   ├── index.json        # Index page data
+│   │   └── resources-settings.json # Resources configuration
 │   ├── css/                  # Stylesheets
 │   │   ├── style.css         # Main stylesheet
 │   │   ├── header.css        # Navigation styles
@@ -114,16 +134,22 @@ STEM_Council/
 │   └── images/               # Static assets
 │       ├── logo.png          # STEM Council logo
 │       └── uploads/          # User-uploaded content
+├── netlify/                   # Netlify Functions
+│   └── functions/            # Serverless functions
+│       ├── deploy-status.js  # Deployment status function
+│       └── save-content.js   # Content saving function
 ├── scripts/                  # Build and utility scripts
 │   ├── generate-content-index.js  # Content indexing
 │   └── generate-index.mjs    # Index generation
+├── troubleshooting resources/ # Documentation and guides
+│   ├── ADMIN_GUIDE.md        # Content management guide
+│   └── NETLIFY_CMS_SETUP.md # CMS setup instructions
 ├── dist/                     # Built files (generated)
 ├── node_modules/            # Dependencies
 ├── index.html              # Main HTML file
 ├── package.json            # Project configuration
 ├── netlify.toml            # Netlify deployment config
-├── ADMIN_GUIDE.md          # Content management guide
-└── NETLIFY_CMS_SETUP.md    # CMS setup instructions
+└── README.md               # This file
 ```
 
 ---
@@ -190,7 +216,7 @@ Visit `/admin/` to access the Netlify CMS interface for content management.
 3. Fill in the event details:
    - **Title**: Event name
    - **Date**: Event date
-   - **Description**: Detailed event information
+   - **Description**: Detailed event information (Markdown format)
    - **Images**: Upload event photos
    - **Category**: Event type/category
 
@@ -200,7 +226,7 @@ Visit `/admin/` to access the Netlify CMS interface for content management.
 2. Select "Clubs" from the collections
 3. Create or edit club information:
    - **Name**: Club name
-   - **Description**: Club activities and purpose
+   - **Description**: Club activities and purpose (Markdown format)
    - **Meeting Times**: When the club meets
    - **Contact**: Club contact information
 
@@ -209,9 +235,10 @@ Visit `/admin/` to access the Netlify CMS interface for content management.
 1. Go to `/admin/` and select "Resources"
 2. Add new learning resources:
    - **Title**: Resource name
-   - **Description**: What the resource offers
+   - **Description**: What the resource offers (Markdown format)
    - **URL**: Link to the resource
    - **Category**: Type of resource (videos, courses, tools, competitions)
+   - **Icon**: Remix Icon class for visual representation
 
 ---
 
@@ -260,7 +287,19 @@ collections:
       - {label: "Title", name: "title", widget: "string"}
       - {label: "Date", name: "date", widget: "datetime"}
       - {label: "Description", name: "description", widget: "markdown"}
+      - {label: "Images", name: "images", widget: "list", field: {label: "Image", name: "image", widget: "image"}}
 ```
+
+### Netlify Functions Configuration
+
+Serverless functions are located in `netlify/functions/`:
+
+- **`deploy-status.js`**: Monitors deployment status
+- **`save-content.js`**: Handles content saving operations
+
+Functions are automatically deployed with your site and accessible at:
+- `https://eomstemcouncil.netlify.app/.netlify/functions/deploy-status`
+- `https://eomstemcouncil.netlify.app/.netlify/functions/save-content`
 
 ### Build Configuration
 
@@ -288,6 +327,9 @@ Vite configuration in `package.json`:
 3. **Build errors**: Ensure all dependencies are installed with `npm install`
 4. **Styling issues**: Check that CSS files are properly linked in `index.html`
 5. **JavaScript errors**: Verify browser console for specific error messages
+6. **Markdown content not rendering**: Ensure proper Markdown syntax in content files
+7. **Images not uploading**: Check file permissions and size limits
+8. **Netlify Functions not working**: Verify function deployment in `netlify/functions/`
 
 ### Development Tips
 
@@ -295,8 +337,29 @@ Vite configuration in `package.json`:
 - Check the Network tab for failed resource loads
 - Verify file paths are correct for your deployment environment
 - Test responsive design on different screen sizes
+- Review the detailed guides in `troubleshooting resources/` directory
+
+### Detailed Documentation
+
+For comprehensive troubleshooting and setup guides, refer to:
+- **`troubleshooting resources/ADMIN_GUIDE.md`** - Complete content management guide
+- **`troubleshooting resources/NETLIFY_CMS_SETUP.md`** - CMS setup and configuration
 
 ---
+
+## Support
+
+For issues and questions:
+
+1. **Check the troubleshooting section** above
+2. **Review the admin guide** in `troubleshooting resources/ADMIN_GUIDE.md`
+3. **Check Netlify CMS setup** in `troubleshooting resources/NETLIFY_CMS_SETUP.md`
+4. **Contact the development team** via the contact form on the website
+5. **Check Netlify Functions** in `netlify/functions/` for serverless function issues
+
+---
+
+
 ## License
 
 This project is developed for the Earl of March Secondary School STEM Council. All rights reserved.
