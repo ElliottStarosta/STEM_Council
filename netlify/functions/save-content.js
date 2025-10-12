@@ -29,7 +29,12 @@ exports.handler = async (event, context) => {
 
   try {
     const { jsonChanges, markdownChanges, user } = JSON.parse(event.body);
-    console.log("Changes to save:", { jsonChanges, markdownChanges });
+    console.log("Changes to save:", { 
+      jsonChanges: jsonChanges?.length || 0, 
+      markdownModified: Object.keys(markdownChanges?.modified || {}).length,
+      markdownDeleted: markdownChanges?.deleted?.length || 0,
+      markdownCreated: markdownChanges?.created?.length || 0
+    });
 
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN
@@ -98,7 +103,8 @@ exports.handler = async (event, context) => {
       }
 
       for (const [filename, fileChangesList] of Object.entries(fileChanges)) {
-        const filePath = `src/content/${filename}`;
+        // Ensure filename has proper path
+        const filePath = filename.startsWith('src/content/') ? filename : `src/content/${filename}`;
         console.log(`Preparing update for ${filePath} with ${fileChangesList.length} changes`);
 
         try {
@@ -146,7 +152,8 @@ exports.handler = async (event, context) => {
     // Handle Markdown deletions with existence check
     if (markdownChanges?.deleted && markdownChanges.deleted.length > 0) {
       for (const filename of markdownChanges.deleted) {
-        const filePath = `src/content/${filename}`;
+        // Ensure filename has proper path
+        const filePath = filename.startsWith('src/content/') ? filename : `src/content/${filename}`;
         try {
           // Check if file exists before marking for deletion
           await octokit.repos.getContent({
@@ -162,12 +169,12 @@ exports.handler = async (event, context) => {
             sha: null // null sha means delete
           });
           changeCount++;
-          console.log(`Marked for deletion: ${filename}`);
+          console.log(`Marked for deletion: ${filePath}`);
         } catch (err) {
           if (err.status === 404) {
-            console.warn(`File not found for deletion: ${filename}, skipping.`);
+            console.warn(`File not found for deletion: ${filePath}, skipping.`);
           } else {
-            console.error(`Error checking file existence for deletion: ${filename}`, err.message);
+            console.error(`Error checking file existence for deletion: ${filePath}`, err.message);
             throw err;
           }
         }
@@ -177,7 +184,8 @@ exports.handler = async (event, context) => {
     // Handle Markdown updates
     if (markdownChanges?.modified) {
       for (const [filename, data] of Object.entries(markdownChanges.modified)) {
-        const filePath = `src/content/${filename}`;
+        // Ensure filename has proper path
+        const filePath = filename.startsWith('src/content/') ? filename : `src/content/${filename}`;
         console.log(`Preparing update for ${filePath}`);
         
         const markdownContent = generateMarkdownFile(data);
@@ -204,7 +212,8 @@ exports.handler = async (event, context) => {
     // Handle Markdown creations
     if (markdownChanges?.created && markdownChanges.created.length > 0) {
       for (const item of markdownChanges.created) {
-        const filePath = `src/content/${item.filename}`;
+        // Ensure filename has proper path
+        const filePath = item.filename.startsWith('src/content/') ? item.filename : `src/content/${item.filename}`;
         console.log(`Preparing creation of ${filePath}`);
         
         const markdownContent = generateMarkdownFile(item.data);
@@ -228,7 +237,7 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // Update index.json
+    // Update index.json if there are markdown changes
     if (markdownChanges && (markdownChanges.deleted?.length > 0 || markdownChanges.created?.length > 0)) {
       try {
         console.log('Preparing index.json update');
@@ -247,16 +256,42 @@ exports.handler = async (event, context) => {
         
         // Update index based on changes
         for (const filename of markdownChanges.deleted || []) {
-          const [folder, file] = filename.split('/');
-          if (indexContent[folder]) {
+          // Extract folder and file from the path
+          const pathParts = filename.split('/');
+          let folder, file;
+          
+          if (filename.startsWith('src/content/')) {
+            // Full path like "src/content/events/2025-10-27-event.md"
+            folder = pathParts[2]; // events, clubs, resources
+            file = pathParts[3]; // 2025-10-27-event.md
+          } else {
+            // Relative path like "events/2025-10-27-event.md"
+            folder = pathParts[0]; // events, clubs, resources  
+            file = pathParts[1]; // 2025-10-27-event.md
+          }
+          
+          if (indexContent[folder] && file) {
             indexContent[folder] = indexContent[folder].filter(f => f !== file);
+            console.log(`Removed ${file} from index.json ${folder} array`);
           }
         }
         
         for (const item of markdownChanges.created || []) {
-          const [folder, file] = item.filename.split('/');
-          if (indexContent[folder] && !indexContent[folder].includes(file)) {
+          // Extract folder and file from the path
+          const pathParts = item.filename.split('/');
+          let folder, file;
+          
+          if (item.filename.startsWith('src/content/')) {
+            folder = pathParts[2];
+            file = pathParts[3];
+          } else {
+            folder = pathParts[0];
+            file = pathParts[1];
+          }
+          
+          if (indexContent[folder] && file && !indexContent[folder].includes(file)) {
             indexContent[folder].push(file);
+            console.log(`Added ${file} to index.json ${folder} array`);
           }
         }
         
@@ -277,8 +312,23 @@ exports.handler = async (event, context) => {
         console.log('Blob created for index.json');
       } catch (indexError) {
         console.error('Error preparing index.json:', indexError.message);
+        // Don't throw here, continue with other changes
       }
     }
+
+    // If no changes to make, return early
+    if (blobs.length === 0) {
+      console.log("No changes to commit");
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ 
+          message: "No changes to save",
+          filesChanged: 0
+        })
+      };
+    }
+
+    console.log(`Creating new tree with ${blobs.length} file changes`);
 
     // Create new tree with all changes
     const { data: newTree } = await octokit.git.createTree({
@@ -288,7 +338,7 @@ exports.handler = async (event, context) => {
       tree: blobs
     });
 
-    console.log(`Created new tree with ${blobs.length} file changes`);
+    console.log(`Created new tree with SHA: ${newTree.sha}`);
 
     // Create commit with all changes
     const commitMessage = `Admin: Batch update - ${changeCount} changes by ${user || 'admin'}`;
@@ -310,7 +360,7 @@ exports.handler = async (event, context) => {
       sha: newCommit.sha
     });
 
-    console.log(`Updated branch ${branch} to new commit`);
+    console.log(`Updated branch ${branch} to new commit ${newCommit.sha}`);
 
     return {
       statusCode: 200,
@@ -327,12 +377,13 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error("Save error:", error.message, error.stack);
+    console.error("Save error:", error.message);
+    console.error("Error stack:", error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         message: error.message,
-        details: error.stack 
+        details: "Check function logs for more details"
       })
     };
   }
@@ -352,25 +403,27 @@ function generateMarkdownFile(data) {
           if (entries.length === 1) {
             // Single property: - key: "value"
             const [itemKey, itemValue] = entries[0];
-            yamlFrontmatter += `  - ${itemKey}: "${itemValue}"\n`;
+            yamlFrontmatter += `  - ${itemKey}: "${String(itemValue).replace(/"/g, '\\"')}"\n`;
           } else {
             // Multiple properties: first on dash line, rest indented
             entries.forEach(([itemKey, itemValue], index) => {
               if (index === 0) {
-                yamlFrontmatter += `  - ${itemKey}: "${itemValue}"\n`;
+                yamlFrontmatter += `  - ${itemKey}: "${String(itemValue).replace(/"/g, '\\"')}"\n`;
               } else {
-                yamlFrontmatter += `    ${itemKey}: "${itemValue}"\n`;
+                yamlFrontmatter += `    ${itemKey}: "${String(itemValue).replace(/"/g, '\\"')}"\n`;
               }
             });
           }
         } else {
-          yamlFrontmatter += `  - "${item}"\n`;
+          yamlFrontmatter += `  - "${String(item).replace(/"/g, '\\"')}"\n`;
         }
       });
     } else if (typeof value === 'string') {
-      yamlFrontmatter += `${key}: "${value}"\n`;
-    } else {
+      yamlFrontmatter += `${key}: "${value.replace(/"/g, '\\"')}"\n`;
+    } else if (typeof value === 'boolean' || typeof value === 'number') {
       yamlFrontmatter += `${key}: ${value}\n`;
+    } else {
+      yamlFrontmatter += `${key}: "${String(value).replace(/"/g, '\\"')}"\n`;
     }
   }
   
