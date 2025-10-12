@@ -1,11 +1,11 @@
 {
   "clubs": [
     "arduino-club.md",
-    "computer-science-club.md",
-    "asd.md",
-    "asd copy.md",
     "asd copy 2.md",
-    "asd copy 3.md"
+    "asd copy 3.md",
+    "asd copy.md",
+    "asd.md",
+    "computer-science-club.md"
   ],
   "events": [
     "2025-07-15-summer-tech-conference-2025.md",
@@ -14,18 +14,18 @@
     "2025-09-10-ai-machine-learning-summit.md",
     "2025-10-01-startup-pitch-competition.md",
     "2025-10-25-cybersecurity-best-practices.md",
-    "2025-10-27.md",
-    "2025-10-27 copy.md",
     "2025-10-27 copy 2.md",
     "2025-10-27 copy 3.md",
     "2025-10-27 copy 4.md",
-    "2025-10-27 copy 5.md"
+    "2025-10-27 copy 5.md",
+    "2025-10-27 copy.md",
+    "2025-10-27.md"
   ],
   "resources": [
     "3blue1brown-mathematics.md",
     "cs50-introduction-computer-science.md",
     "desmos-graphing-calculator.md",
-    "waterloo-math-contests.md",
-    "organic-chem-tutor.md"
+    "organic-chem-tutor.md",
+    "waterloo-math-contests.md"
   ]
 }
