@@ -1698,66 +1698,60 @@ function insertNewMarkdownCard(type, data, filename) {
     createMarkdownEditOverlay(card, "club");
   }
 
-if (type === 'event') {
-  const grid = iframeDoc.getElementById('eventsGrid') || iframeDoc.querySelector('.events-grid');
-  if (!grid) return;
-
-  let newId = 1;
-  const eventsManager = iframeWindow && iframeWindow.eventsManager;
-  if (eventsManager && Array.isArray(eventsManager.eventsData) && eventsManager.eventsData.length > 0) {
-    newId = Math.max(...eventsManager.eventsData.map(e => Number(e.id) || 0)) + 1;
-  }
-
-  const images = Array.isArray(data.images) ? data.images.map(img => {
-    let url = (typeof img === 'object' && img !== null) ? (img.image || '') : img;
-    // Convert Google Drive URLs
-    if (eventsManager && typeof eventsManager.convertGoogleDriveUrl === 'function') {
-      url = eventsManager.convertGoogleDriveUrl(url);
-    }
-    return url;
-  }) : [];
+  if (type === "club") {
+    const grid = iframeDoc.querySelector(".clubs-grid");
+    if (!grid) return;
+    const card = iframeDoc.createElement("div");
+    card.className = "club-card";
+    card.setAttribute(
+      "data-club",
+      (data.name || "").toLowerCase().replace(/\s+/g, "-")
+    );
+    card.setAttribute("data-markdown-file", filename);
+    card.innerHTML = `
+      <div class="club-card-inner">
+        <div class="club-icon"><i class="${
+          data.icon || "ri-star-line"
+        }"></i></div>
+        <h3 class="club-name">${escapeHtml(data.name || "")}</h3>
+        <p class="club-description">${escapeHtml(data.description || "")}</p>
+        <div class="club-links">
+          ${(data.socialLinks || [])
+            .map(
+              (link) =>
+                `<a href="${
+                  link.url || "#"
+                }" class="club-link" title="${escapeHtml(
+                  link.type || "Link"
+                )}" target="_blank" rel="noopener noreferrer"><i class="${
+                  link.icon || "ri-link"
+                }"></i></a>`
+            )
+            .join("")}
+        </div>
+      </div>
+      <div class="club-card-glow"></div>
+    `;
+    grid.appendChild(card);
   
-  const firstImage = images[0] || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop';
-  const card = iframeDoc.createElement('div');
-  card.className = 'event-card';
-  card.setAttribute('data-event-id', String(newId));
-  card.setAttribute('data-markdown-file', filename);
-  const formattedDate = (eventsManager && typeof eventsManager.formatDate === 'function' && data.startDate && data.endDate)
-    ? eventsManager.formatDate(data.startDate, data.endDate)
-    : '';
-  card.innerHTML = `
-    <img src="${firstImage}" alt="${escapeHtml(data.name || '')}" class="event-image" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
-    <div class="event-content">
-      <div class="event-date">${formattedDate}</div>
-      <h3 class="event-name">${escapeHtml(data.name || '')}</h3>
-      <p class="event-preview">${escapeHtml((data.body || '').length > 100 ? (data.body || '').substring(0, 100) + '...' : (data.body || ''))}</p>
-      <button class="event-view-more">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9,18 15,12 9,6"></polyline>
-        </svg>
-      </button>
-    </div>
-  `;
-  grid.appendChild(card);
-
-  card.style.opacity = '1';
-  card.style.transform = 'translateY(0)';
-
-  if (eventsManager) {
-    const newEvent = {
-      id: newId,
-      name: data.name || '',
-      startDate: data.startDate || '',
-      endDate: data.endDate || '',
-      description: data.body || '',
-      images: images.length ? images : ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'],
-      filename: filename.replace(/^events\//, '')
-    };
-    eventsManager.eventsData.push(newEvent);
+    // Make sure the new card is visible
+    card.style.opacity = "1";
+    card.style.transform = "translateY(0)";
+  
+    // REINITIALIZE THE CAROUSEL after adding new card
+    setTimeout(() => {
+      const clubsManager = iframeWindow && iframeWindow.clubsManager;
+      if (clubsManager && typeof clubsManager.initClubsCarousel === 'function') {
+        clubsManager.initClubsCarousel();
+        console.log('Clubs carousel reinitialized after adding new club');
+      } else {
+        console.warn('clubsManager or initClubsCarousel not found');
+      }
+    }, 100);
+  
+    // Create overlay/edit controls for this new card
+    createMarkdownEditOverlay(card, "club");
   }
-
-  createMarkdownEditOverlay(card, 'event');
-}
 
   if (type === "resource") {
     const grid = iframeDoc.querySelector(".resources-grid");
