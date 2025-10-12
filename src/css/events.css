@@ -12,19 +12,20 @@
 
 .events-carousel-container {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin: 0 auto 2rem;
+  pointer-events: auto;
+  gap: 20px;
   width: 100%;
-  margin-bottom: 2rem;
-  margin-top: var(--spacing-4xl);
 }
 
 .events-grid-container {
-  width: 90%;
-  overflow: visible;
+  flex: 0 1 auto;
+  overflow: hidden;
   position: relative;
-  padding-right: 20px;  
+  pointer-events: auto;
 }
 
 /* ==========================================
@@ -56,7 +57,7 @@
 }
 
 .events-container {
-  max-width: var(--container-max-width);
+  max-width: 1500px;
   margin: 0 auto;
   padding: 0 var(--spacing-base);
   position: relative;
@@ -248,7 +249,7 @@
 .events-grid {
   display: flex;
   transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-  gap: var(--spacing-2xl);
+  gap: 30px;
   overflow: visible;
   position: relative;
   padding: 1.5rem 0;
@@ -347,7 +348,7 @@
   backdrop-filter: blur(10px);
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  /* box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2); */
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
   position: relative;
@@ -369,20 +370,20 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   opacity: 0;
   z-index: 15;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
+  flex-shrink: 0;
+  pointer-events: auto;
   backdrop-filter: blur(10px);
 }
 
+
 .events-carousel-container .prev-btn {
-  left: 0;
+  left: auto;
 }
 
 .events-carousel-container .next-btn {
-  right: 0;
+  right: auto;
 }
-
 .events-carousel-container .carousel-control:hover:not(:disabled) {
   background: var(--white);
   transform: translateY(-50%) scale(1.1);
@@ -434,7 +435,7 @@
 
 .event-card:hover {
   transform: translateY(-12px) scale(1.02);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15), 0 0 0 2px rgba(66, 166, 76, 0.3);
+  /* box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15), 0 0 0 2px rgba(66, 166, 76, 0.3); */
   border-color: rgba(66, 166, 76, 0.4);
 }
 
@@ -756,6 +757,7 @@
   margin-bottom: 0;
 }
 
+
 @media (max-width: 1200px) {
   .event-card {
     flex: 0 0 calc(50% - 1rem);
@@ -763,7 +765,7 @@
   }
   
   .events-grid-container {
-    width: 88%;
+    width: 100%;
   }
   
   .events-carousel-container .carousel-control {

@@ -843,9 +843,17 @@ document.getElementById('iconSearch').addEventListener('input', (e) => {
 function openIconPicker(inputElement) {
   currentIconInput = inputElement;
   
+  // SAVE ALL FORM DATA BEFORE OPENING
+  const formValues = {};
+  document.querySelectorAll(".form-input, .form-textarea, select").forEach((input) => {
+    if (input.id) {
+      formValues[input.id] = input.value;
+    }
+  });
+  
   // SAVE ALL SOCIAL LINK DATA BEFORE OPENING
   savedSocialLinks = [];
-  document.querySelectorAll('.social-link-group').forEach((group, idx) => {
+  document.querySelectorAll(".social-link-group").forEach((group, idx) => {
     savedSocialLinks[idx] = {
       type: group.querySelector('[data-field="type"]')?.value || '',
       url: group.querySelector('[data-field="url"]')?.value || '',
@@ -864,26 +872,25 @@ function openIconPicker(inputElement) {
   const modalContent = elements.modalForm.innerHTML;
   const modalTitle = document.querySelector('.modal-title').textContent;
   
-
   document.querySelector('.modal-title').textContent = 'Choose Icon';
   elements.modalForm.innerHTML = `
     <input type="text" class="icon-picker-search" placeholder="Search icons..." id="iconSearch">
     <div class="icon-picker-content" id="iconContent"></div>
   `;
   
-   // Set consistent height and remove modal-content overflow to prevent double scrollbar
+  // Set consistent height and remove modal-content overflow to prevent double scrollbar
   modalContentEl.style.overflow = 'hidden';
   modalContentEl.style.height = '80vh';
   modalContentEl.style.maxHeight = '80vh';
 
-   // Make icon-picker-content fill available space
+  // Make icon-picker-content fill available space
   const iconContent = document.getElementById('iconContent');
   iconContent.style.maxHeight = 'calc(80vh - 165px)';
   
-  
-  // Store original content to restore later
+  // Store original content and form values to restore later
   elements.modalForm.dataset.originalContent = modalContent;
   elements.modalForm.dataset.originalTitle = modalTitle;
+  elements.modalForm.dataset.formValues = JSON.stringify(formValues);
   
   // Populate icons
   const content = document.getElementById('iconContent');
@@ -984,7 +991,6 @@ function openIconPicker(inputElement) {
     }
   });
   
-  
   // Hide the save/cancel buttons temporarily
   elements.modalSaveBtn.style.display = 'none';
   elements.modalCancelBtn.style.display = 'none';
@@ -995,6 +1001,7 @@ window.closeIconPicker = function() {
   const originalContent = elements.modalForm.dataset.originalContent;
   const originalTitle = elements.modalForm.dataset.originalTitle;
   const scrollPosition = elements.modalForm.dataset.scrollPosition;
+  const formValues = elements.modalForm.dataset.formValues ? JSON.parse(elements.modalForm.dataset.formValues) : {};
   
   if (originalContent) {
     elements.modalForm.innerHTML = originalContent;
@@ -1005,6 +1012,30 @@ window.closeIconPicker = function() {
     modalContentEl.style.overflow = 'auto';
     modalContentEl.style.height = '';
     modalContentEl.style.maxHeight = '80vh';
+    
+    // Restore all form values
+    Object.keys(formValues).forEach(id => {
+      const input = document.getElementById(id);
+      if (input) input.value = formValues[id];
+    });
+    
+    // Restore all social link data
+    document.querySelectorAll(".social-link-group").forEach((group, idx) => {
+      if (savedSocialLinks[idx]) {
+        const typeInput = group.querySelector('[data-field="type"]');
+        const urlInput = group.querySelector('[data-field="url"]');
+        const iconInput = group.querySelector('[data-field="icon"]');
+        
+        if (typeInput) typeInput.value = savedSocialLinks[idx].type;
+        if (urlInput) urlInput.value = savedSocialLinks[idx].url;
+        if (iconInput) iconInput.value = savedSocialLinks[idx].icon;
+        
+        const preview = group.querySelector('.icon-preview i');
+        if (preview && iconInput) {
+          preview.className = iconInput.value;
+        }
+      }
+    });
     
     // Restore scroll position
     if (scrollPosition !== undefined) {
@@ -1021,24 +1052,45 @@ window.closeIconPicker = function() {
     delete elements.modalForm.dataset.originalContent;
     delete elements.modalForm.dataset.originalTitle;
     delete elements.modalForm.dataset.scrollPosition;
+    delete elements.modalForm.dataset.formValues;
   }
 };
 
 function selectIcon(iconClass) {
   if (currentIconInput) {
-    const targetGroup = currentIconInput.closest('.social-link-group');
+    const targetGroup = currentIconInput.closest(".social-link-group");
     const targetGroupIndex = targetGroup ? targetGroup.dataset.index : null;
+    
+    // Check if this is a social link icon or main icon
+    const isMainIcon = !targetGroup;
     
     // Update the saved data with the new icon
     if (targetGroupIndex !== null && savedSocialLinks[targetGroupIndex]) {
+      // Social link icon
       savedSocialLinks[targetGroupIndex].icon = iconClass;
+    } else if (isMainIcon) {
+      // This is the main club/resource icon, update formValues
+      const formValues = elements.modalForm.dataset.formValues ? JSON.parse(elements.modalForm.dataset.formValues) : {};
+      formValues['icon'] = iconClass;
+      elements.modalForm.dataset.formValues = JSON.stringify(formValues);
     }
     
     // Close and restore
     closeIconPicker();
     
-    // Restore ALL social link data after form reloads
+    // Restore ALL data after form reloads
     setTimeout(() => {
+      // Only restore main icon if it was the one being edited
+      if (isMainIcon) {
+        const iconInput = document.getElementById('icon');
+        if (iconInput) {
+          iconInput.value = iconClass;
+          const preview = iconInput.previousElementSibling?.querySelector('i');
+          if (preview) preview.className = iconClass;
+        }
+      }
+      
+      // Always restore social links
       document.querySelectorAll('.social-link-group').forEach((group, idx) => {
         if (savedSocialLinks[idx]) {
           const typeInput = group.querySelector('[data-field="type"]');
@@ -1055,16 +1107,6 @@ function selectIcon(iconClass) {
           }
         }
       });
-      
-      // Also restore main form fields
-      const formValues = {};
-      if (elements.modalForm.dataset.formValues) {
-        Object.assign(formValues, JSON.parse(elements.modalForm.dataset.formValues));
-        Object.keys(formValues).forEach(id => {
-          const input = document.getElementById(id);
-          if (input) input.value = formValues[id];
-        });
-      }
     }, 10);
   }
 }

@@ -459,84 +459,97 @@
 </section>
 
   <!-- Events Section -->
-  <section class="events" id="events">
-    <div class="events-container">
-      <!-- Background Grid -->
-      <div class="events-grid-bg"></div>
+<!-- Events Section -->
+<section class="events" id="events">
+  <div class="events-container">
+    <!-- Header -->
+    <div class="events-header">
+      <h2 class="events-title">Upcoming Events</h2>
+      <div class="events-subtitle">
+        Discover amazing STEM opportunities and connect with fellow Lions
+      </div>
+    </div>
 
-      <!-- Header -->
-      <div class="events-header">
-        <h2 class="events-title">Upcoming Events</h2>
-        <div class="events-subtitle">
-          Discover amazing STEM opportunities and connect with fellow Lions
+    <!-- Events Carousel Container -->
+    <div class="events-carousel-container">
+      <button class="carousel-control prev-btn" aria-label="Previous events">
+        <i class="ri-arrow-left-s-line"></i>
+      </button>
+      
+      <div class="events-grid-container">
+        <div class="events-grid" id="eventsGrid">
+          <!-- Events will be populated by JavaScript -->
         </div>
       </div>
+      
+      <button class="carousel-control next-btn" aria-label="Next events">
+        <i class="ri-arrow-right-s-line"></i>
+      </button>
+    </div>
 
-      <!-- Events Grid -->
-      <div class="events-grid" id="eventsGrid">
-        <!-- Events will be populated by JavaScript -->
-      </div>
+    <!-- Indicator Dots -->
+    <div class="events-indicator">
+      <div class="indicator-dots"></div>
+    </div>
 
-      <!-- Event Modal -->
-      <div class="event-modal" id="eventModal">
-        <div class="modal-overlay" id="modalOverlay"></div>
-        <div class="modal-content">
-          <button class="modal-close" id="modalClose">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+    <!-- Event Modal -->
+    <div class="event-modal" id="eventModal">
+      <div class="modal-overlay" id="modalOverlay"></div>
+      <div class="modal-content">
+        <button class="modal-close" id="modalClose">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
 
-          <div class="modal-header">
-            <h3 class="modal-title" id="modalTitle"></h3>
-            <div class="modal-date" id="modalDate"></div>
-          </div>
+        <div class="modal-header">
+          <h3 class="modal-title" id="modalTitle"></h3>
+          <div class="modal-date" id="modalDate"></div>
+        </div>
 
-          <div class="modal-body">
-            <div class="modal-carousel" id="modalCarousel">
-              <div class="carousel-container">
-                <div class="carousel-slides" id="carouselSlides"></div>
-                <button class="carousel-btn carousel-prev" id="carouselPrev">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="15,18 9,12 15,6"></polyline>
-                  </svg>
-                </button>
-                <button class="carousel-btn carousel-next" id="carouselNext">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9,18 15,12 9,6"></polyline>
-                  </svg>
-                </button>
-              </div>
-              <div class="carousel-dots" id="carouselDots"></div>
+        <div class="modal-body">
+          <div class="modal-carousel" id="modalCarousel">
+            <div class="carousel-container">
+              <div class="carousel-slides" id="carouselSlides"></div>
+              <button class="carousel-btn carousel-prev" id="carouselPrev">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15,18 9,12 15,6"></polyline>
+                </svg>
+              </button>
+              <button class="carousel-btn carousel-next" id="carouselNext">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9,18 15,12 9,6"></polyline>
+                </svg>
+              </button>
             </div>
-
-            <div class="modal-description" id="modalDescription"></div>
+            <div class="carousel-dots" id="carouselDots"></div>
           </div>
-        </div>
-      </div>
 
-      <!-- Background Elements -->
-      <div class="events-bg">
-        <!-- Particle system like hero -->
-        <div class="events-particles">
-          <div class="particle particle-1"></div>
-          <div class="particle particle-2"></div>
-          <div class="particle particle-3"></div>
-          <div class="particle particle-4"></div>
-          <div class="particle particle-5"></div>
-          <div class="particle particle-6"></div>
-          <div class="particle particle-7"></div>
-          <div class="particle particle-8"></div>
-          <div class="particle particle-9"></div>
-          <div class="particle particle-10"></div>
-          <div class="particle particle-11"></div>
-          <div class="particle particle-12"></div>
+          <div class="modal-description" id="modalDescription"></div>
         </div>
       </div>
     </div>
-  </section>
 
+    <!-- Background Elements -->
+    <div class="events-bg">
+      <div class="events-particles">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+        <div class="particle particle-7"></div>
+        <div class="particle particle-8"></div>
+        <div class="particle particle-9"></div>
+        <div class="particle particle-10"></div>
+        <div class="particle particle-11"></div>
+        <div class="particle particle-12"></div>
+      </div>
+    </div>
+  </div>
+</section>
   <section class="resources" id="resources">
     <div class="container">
       <div class="resources-header">
