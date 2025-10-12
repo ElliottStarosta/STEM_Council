@@ -37,7 +37,7 @@ exports.handler = async (event, context) => {
 
     const owner = process.env.GITHUB_OWNER;
     const repo = process.env.GITHUB_REPO;
-    const branch = "admin";
+    const branch = "main";
 
     console.log(`Repo: ${owner}/${repo}, Branch: ${branch}`);
 
