@@ -44,20 +44,24 @@
 
 .clubs-carousel-container {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 2rem;
+  justify-content: center;
+  margin: 0 auto 2rem;
   pointer-events: auto;
-  gap: 10px
+  gap: 20px;
+  width: 100%;
 }
 
 .clubs-grid-container {
-  flex: 1;
+  flex: 0 1 auto;
   overflow: hidden;
   position: relative;
   pointer-events: auto;
+}
+
+.clubs-carousel-container .next-btn {
+  margin-left: -15px;
 }
 
 
@@ -451,6 +455,10 @@
   .clubs-carousel-container {
     gap: 8px;
   }
+
+  .clubs-carousel-container .next-btn {
+  margin-left: -9px;
+}
 }
 
 @media (max-width: 768px) {
@@ -506,6 +514,9 @@
   .clubs-carousel-container {
     gap: 8px;
   }
+  .clubs-carousel-container .next-btn {
+  margin-left: -1px;
+}
   
   .clubs-carousel-container .carousel-control {
     width: 40px;
