@@ -16,11 +16,240 @@ class EventsManager {
   async init() {
     await this.loadEvents();
     this.renderEvents();
+    this.initEventsCarousel(); // Add this line
     this.bindEvents();
     this.initAnimations();
     this.animateEventsParticles();
     // Store instance globally for utility functions
     window.eventsManager = this;
+  }
+
+  initEventsCarousel() {
+    const eventsSection = document.querySelector(".events");
+    if (!eventsSection) return;
+    
+    const eventCards = document.querySelectorAll(".event-card");
+    const eventsGrid = document.getElementById("eventsGrid");
+    const prevBtn = document.querySelector(".events-carousel-container .prev-btn");
+    const nextBtn = document.querySelector(".events-carousel-container .next-btn");
+    const indicatorDots = document.querySelector(".events-indicator .indicator-dots");
+    
+    if (!eventCards.length || !eventsGrid || !prevBtn || !nextBtn || !indicatorDots) {
+      console.log('Events carousel elements not found or no events');
+      return;
+    }
+    
+    let currentSlide = 0;
+    let slidesPerView = getEventsSlidesPerView();
+    let totalSlides = Math.ceil(eventCards.length / slidesPerView);
+    let isAnimating = false;
+    
+    // Create indicator dots
+    createEventIndicatorDots();
+    
+    // Animate carousel controls entrance
+    gsap.to([prevBtn, nextBtn], {
+      opacity: 1,
+      y: 0,
+      duration: 0.5,
+      stagger: 0.1,
+      delay: 0.8,
+      ease: "power2.out"
+    });
+    
+    // Add event listeners
+    window.addEventListener("resize", handleEventsResize);
+    prevBtn.addEventListener("click", goToPrevEventSlide);
+    nextBtn.addEventListener("click", goToNextEventSlide);
+    
+    // Initialize carousel
+    updateEventsCarouselState();
+    updateEventsVisibility();
+    
+    function handleEventsResize() {
+      const newSlidesPerView = getEventsSlidesPerView();
+      
+      if (newSlidesPerView !== slidesPerView) {
+        slidesPerView = newSlidesPerView;
+        totalSlides = Math.ceil(eventCards.length / slidesPerView);
+        
+        currentSlide = 0;
+        updateEventsCarouselState();
+        createEventIndicatorDots();
+        updateEventsVisibility();
+        
+        // Reset transform
+        gsap.set(eventsGrid, { x: 0 });
+      }
+    }
+    
+    function updateEventsVisibility() {
+      eventCards.forEach((card, index) => {
+        const slideIndex = Math.floor(index / slidesPerView);
+        const isVisible = slideIndex === currentSlide;
+        
+        if (!isVisible) {
+          card.style.visibility = 'hidden';
+          card.style.opacity = '0';
+        } else {
+          card.style.visibility = 'visible';
+          card.style.opacity = '1';
+        }
+      });
+    }
+    
+    function createEventIndicatorDots() {
+      indicatorDots.innerHTML = "";
+      
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement("div");
+        dot.classList.add("indicator-dot");
+        
+        gsap.set(dot, {
+          opacity: 0,
+          scale: 0.5
+        });
+        
+        if (i === currentSlide) {
+          dot.classList.add("active");
+        }
+        
+        dot.addEventListener("click", () => {
+          if (isAnimating || i === currentSlide) return;
+          
+          gsap.fromTo(dot, 
+            { scale: 1 },
+            { 
+              scale: 1.2, 
+              duration: 0.2, 
+              ease: "power2.out",
+              onComplete: () => {
+                gsap.to(dot, { 
+                  scale: 1, 
+                  duration: 0.2, 
+                  ease: "power2.in" 
+                });
+              }
+            }
+          );
+          
+          currentSlide = i;
+          updateEventsCarouselState();
+          animateEventsCarousel();
+        });
+        
+        indicatorDots.appendChild(dot);
+        
+        gsap.to(dot, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.3,
+          delay: 0.9 + (0.05 * i),
+          ease: "back.out(1.7)"
+        });
+      }
+    }
+    
+    function updateActiveEventIndicator() {
+      const dots = document.querySelectorAll(".events-indicator .indicator-dot");
+      
+      dots.forEach((dot, index) => {
+        if (index === currentSlide) {
+          if (!dot.classList.contains("active")) {
+            dot.classList.add("active");
+            
+            gsap.fromTo(dot, 
+              { scale: 1 },
+              { 
+                scale: 1.2, 
+                duration: 0.2, 
+                ease: "power2.out",
+                onComplete: () => {
+                  gsap.to(dot, { 
+                    scale: 1, 
+                    duration: 0.2, 
+                    ease: "power2.in" 
+                  });
+                }
+              }
+            );
+          }
+        } else {
+          if (dot.classList.contains("active")) {
+            gsap.to(dot, {
+              scale: 0.9,
+              duration: 0.2,
+              ease: "power2.in",
+              onComplete: () => {
+                dot.classList.remove("active");
+                gsap.to(dot, { scale: 1, duration: 0.2 });
+              }
+            });
+          } else {
+            dot.classList.remove("active");
+          }
+        }
+      });
+    }
+    
+    function goToPrevEventSlide() {
+      if (isAnimating || currentSlide === 0) return;
+      
+      currentSlide--;
+      updateEventsCarouselState();
+      animateEventsCarousel();
+    }
+    
+    function goToNextEventSlide() {
+      if (isAnimating || currentSlide >= totalSlides - 1) return;
+      
+      currentSlide++;
+      updateEventsCarouselState();
+      animateEventsCarousel();
+    }
+    
+    function animateEventsCarousel() {
+      isAnimating = true;
+      
+      const firstCard = eventCards[0];
+      if (!firstCard) {
+        isAnimating = false;
+        return;
+      }
+      
+      const slideWidth = firstCard.offsetWidth;
+      const gap = parseFloat(getComputedStyle(eventsGrid).gap) || 32;
+      const translateX = -currentSlide * (slideWidth + gap) * slidesPerView;
+      
+      gsap.to(eventsGrid, {
+        x: translateX,
+        duration: 0.6,
+        ease: "power2.out",
+        onComplete: () => {
+          isAnimating = false;
+          updateActiveEventIndicator();
+          updateEventsVisibility();
+        }
+      });
+    }
+    
+    function updateEventsCarouselState() {
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide >= totalSlides - 1;
+      
+      prevBtn.style.opacity = prevBtn.disabled ? 0.3 : 1;
+      nextBtn.style.opacity = nextBtn.disabled ? 0.3 : 1;
+      
+      updateActiveEventIndicator();
+    }
+    
+    function getEventsSlidesPerView() {
+      const width = window.innerWidth;
+      
+      if (width <= 768) return 1;
+      if (width <= 1200) return 2;
+      return 3;
+    }
   }
 
   // Load events from markdown files
@@ -600,4 +829,13 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initEvents);
 } else {
   initEvents();
+}
+
+// Make carousel initialization accessible for admin updates
+if (window.eventsManager) {
+  window.initEventsCarousel = function() {
+    if (window.eventsManager && typeof window.eventsManager.initEventsCarousel === 'function') {
+      window.eventsManager.initEventsCarousel();
+    }
+  };
 }

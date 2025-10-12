@@ -22,7 +22,6 @@ function initClubsSection() {
   initClubInteractions();
   initClubsCarousel();
 }
-
 function initClubsCarousel() {
   const clubsSection = document.querySelector(".clubs-section");
   if (!clubsSection) return;
@@ -33,8 +32,12 @@ function initClubsCarousel() {
   const nextBtn = document.querySelector(".clubs-carousel-container .next-btn");
   const indicatorDots = document.querySelector(".clubs-indicator .indicator-dots");
   
+  // Refreshing DOM
   if (!clubCards.length || !clubsGrid || !prevBtn || !nextBtn || !indicatorDots) {
-    console.error('Carousel elements not found');
+    console.warn('Carousel elements not found, retrying...');
+    setTimeout(() => {
+      initClubsCarousel();
+    }, 500);
     return;
   }
   
@@ -46,14 +49,10 @@ function initClubsCarousel() {
   // Create indicator dots
   createClubIndicatorDots();
   
-  // Animate carousel controls entrance
-  gsap.to([prevBtn, nextBtn], {
-    opacity: 1,
-    y: 0,
-    duration: 0.5,
-    stagger: 0.1,
-    delay: 0.8,
-    ease: "power2.out"
+  // Set initial state for carousel controls
+  gsap.set([prevBtn, nextBtn], {
+    opacity: 0,
+    y: 20
   });
   
   // Add event listeners
@@ -83,11 +82,13 @@ function initClubsCarousel() {
   }
   
   function updateClubsVisibility() {
+    const slidesPerView = getClubsSlidesPerView();
+    
     clubCards.forEach((card, index) => {
       const slideIndex = Math.floor(index / slidesPerView);
       const isVisible = slideIndex === currentSlide;
       
-      if (!isVisible) {
+      if (!isVisible && !card.classList.contains('active')) {
         card.style.visibility = 'hidden';
         card.style.opacity = '0';
       } else {
@@ -138,15 +139,20 @@ function initClubsCarousel() {
       });
       
       indicatorDots.appendChild(dot);
-      
-      gsap.to(dot, {
-        opacity: 1,
-        scale: 1,
-        duration: 0.3,
-        delay: 0.9 + (0.05 * i),
-        ease: "back.out(1.7)"
-      });
     }
+  }
+  
+  function animateClubIndicatorDotsEntry() {
+    const dots = document.querySelectorAll(".clubs-indicator .indicator-dot");
+    
+    gsap.to(dots, {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      duration: 0.4,
+      stagger: 0.08,
+      ease: "back.out(1.7)"
+    });
   }
   
   function updateActiveClubIndicator() {
@@ -210,6 +216,10 @@ function initClubsCarousel() {
   function animateClubsCarousel() {
     isAnimating = true;
     
+    document.querySelectorAll(".club-card.active").forEach(card => {
+      card.classList.remove('active');
+    });
+    
     const firstCard = clubCards[0];
     if (!firstCard) {
       isAnimating = false;
@@ -249,6 +259,24 @@ function initClubsCarousel() {
     if (width <= 1200) return 2;
     return 3;
   }
+  
+  // Trigger animations when carousel comes into view
+  ScrollTrigger.create({
+    trigger: '.clubs-carousel-container',
+    start: 'top 75%',
+    onEnter: () => {
+      gsap.to([prevBtn, nextBtn], {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        stagger: 0.1,
+        ease: "power2.out"
+      });
+      
+      animateClubIndicatorDotsEntry();
+    },
+    once: true
+  });
 }
 
 // Particles Animation
@@ -337,31 +365,6 @@ function initClubsAnimations() {
       }
     }
   );
-  
-  // Animate carousel controls
-  const carouselControls = document.querySelectorAll(".clubs-carousel-container .carousel-control");
-  if (carouselControls.length > 0) {
-    gsap.set(carouselControls, {
-      opacity: 0,
-      y: 20
-    });
-    
-    ScrollTrigger.create({
-      trigger: '.clubs-carousel-container',
-      start: 'top 75%',
-      onEnter: () => {
-        gsap.to(carouselControls, {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          stagger: 0.1,
-          delay: 0.5,
-          ease: "power2.out"
-        });
-      },
-      once: true
-    });
-  }
   
   // Animate decorative elements
   gsap.fromTo('.decoration-circle-1',
@@ -605,16 +608,24 @@ async function loadClubsContent() {
     
     clubsGrid.innerHTML = clubsHTML;
 
+    // Wait for DOM to be ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     if (typeof gsap !== 'undefined') {
       gsap.set('.club-card', { opacity: 0, y: 40, scale: 0.95 });
     }
 
     // Initialize clubs section with carousel
-    initClubsSection();
-
-    if (typeof ScrollTrigger !== 'undefined') {
-      ScrollTrigger.refresh();
-    }
+    // Use requestAnimationFrame to ensure DOM is painted
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        initClubsSection();
+        
+        if (typeof ScrollTrigger !== 'undefined') {
+          ScrollTrigger.refresh();
+        }
+      });
+    });
   } catch (error) {
     console.error('Error loading clubs content:', error);
   }
