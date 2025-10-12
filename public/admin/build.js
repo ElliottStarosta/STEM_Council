@@ -18,8 +18,8 @@ const buildSteps = [
 ];
 
 /* ==========================================
-  Add Log Entry
-  ========================================== */
+   Add Log Entry
+   ========================================== */
 function addLog(text, type = "default") {
   const logEl = document.createElement("div");
   logEl.className = `build-log ${type}`;
@@ -29,191 +29,128 @@ function addLog(text, type = "default") {
 }
 
 /* ==========================================
-  Update Step Status
-  ========================================== */
+   Update Step Status
+   ========================================== */
 function updateStep(stepId, status) {
-  console.log(`[DEBUG] Updating step ${stepId} to ${status}`);
   const stepEl = document.getElementById(stepId);
-
-  if (!stepEl) {
-    console.error(`[ERROR] Step element not found: ${stepId}`);
-    return;
-  }
+  if (!stepEl) return;
 
   stepEl.classList.remove("active", "completed");
-
+  
   if (status === "active") {
     stepEl.classList.add("active");
   } else if (status === "completed") {
     stepEl.classList.add("completed");
-    const icon = stepEl.querySelector("i");
-    if (icon) {
-      icon.className = "ri-check-line";
-      icon.style.animation = "none"; // Force stop spinning
-    }
+    stepEl.querySelector("i").className = "ri-check-line";
   }
 }
 
 /* ==========================================
-  Get Latest Deploy Status from Netlify Function
-  ========================================== */
-async function getLatestDeploy(afterTime) {
+   Get Latest Deploy Status from Netlify Function
+   ========================================== */
+async function getLatestDeploy() {
   try {
-    const url = afterTime
-      ? `/.netlify/functions/deploy-status?after=${encodeURIComponent(afterTime)}`
-      : '/.netlify/functions/deploy-status';
-
-    console.log('[DEBUG] Fetching deploy status from:', url);
-
-    const response = await fetch(url);
-
-    console.log('[DEBUG] Response status:', response.status);
-
+    const response = await fetch('/.netlify/functions/deploy-status');
+    
     if (!response.ok) {
-      console.error('[ERROR] Function response not OK:', response.status);
-      const text = await response.text();
-      console.error('[ERROR] Response text:', text);
+      console.error('Function response not OK:', response.status);
       return null;
     }
 
     const data = await response.json();
-    console.log('[DEBUG] Deploy data received:', data);
-
+    
     if (data.error) {
-      console.error('[ERROR] Function returned error:', data.error);
+      console.error('Function returned error:', data.error);
       return null;
     }
-
+    
     return data;
   } catch (error) {
-    console.error('[ERROR] Exception fetching deploy status:', error);
+    console.error('Error fetching deploy status:', error);
     return null;
   }
 }
 
 /* ==========================================
-  Run Simulated Build While Monitoring Real Deploy
-  ========================================== */
+   Run Simulated Build While Monitoring Real Deploy
+   ========================================== */
 async function runBuildWithMonitoring() {
-  console.log('[START] Beginning build monitoring');
-
-  // Record the start time to track NEW deploys only
-  const startTime = new Date().toISOString();
-  console.log('[DEBUG] Start time recorded:', startTime);
-
   let isDeployComplete = false;
   let deployState = null;
-  let foundNewDeploy = false;
-  let pollCount = 0;
-
-  // Start monitoring for NEW deploys in background
+  
+  // Start monitoring the real deploy in background
   const monitorPromise = new Promise((resolve) => {
-    console.log('[DEBUG] Starting monitoring promise');
-
     const pollInterval = setInterval(async () => {
-      pollCount++;
-      console.log(`[POLL #${pollCount}] Checking for deploys...`);
-
-      const deploy = await getLatestDeploy(startTime);
-
+      const deploy = await getLatestDeploy();
+      
       if (deploy) {
-        console.log('[DEBUG] Deploy found:', {
-          id: deploy.id,
-          state: deploy.state,
-          created_at: deploy.created_at
-        });
-
-        const deployTime = new Date(deploy.created_at);
-        const startTimeDate = new Date(startTime);
-
-        console.log('[DEBUG] Comparing times:', {
-          deployTime: deployTime.toISOString(),
-          startTime: startTimeDate.toISOString(),
-          isNewer: deployTime > startTimeDate
-        });
-
-        // Only track deploys created AFTER we started monitoring
-        if (deployTime > startTimeDate) {
-          if (!foundNewDeploy) {
-            foundNewDeploy = true;
-            console.log('[SUCCESS] Found new deploy!');
-            addLog(`✓ Found deploy: ${deploy.id.substring(0, 8)}`, "success");
-          }
-
-          deployState = deploy.state;
-          console.log('[DEBUG] Deploy state:', deployState);
-
-          if (deployState === 'ready') {
-            console.log('[SUCCESS] Deploy completed successfully!');
-            isDeployComplete = true;
-            clearInterval(pollInterval);
-            resolve('success');
-          } else if (deployState === 'error') {
-            console.log('[ERROR] Deploy failed!');
-            isDeployComplete = true;
-            clearInterval(pollInterval);
-            resolve('error');
-          } else {
-            console.log('[INFO] Deploy still in progress...');
-          }
-        } else {
-          console.log('[INFO] Deploy is older than start time, ignoring');
+        deployState = deploy.state;
+        
+        if (deployState === 'ready') {
+          isDeployComplete = true;
+          clearInterval(pollInterval);
+          resolve('success');
+        } else if (deployState === 'error') {
+          isDeployComplete = true;
+          clearInterval(pollInterval);
+          resolve('error');
         }
-      } else {
-        console.log('[INFO] No deploy data received');
       }
     }, 3000); // Poll every 3 seconds
-
-    // Timeout after 5 minutes
+    
+    // Timeout after 10 minutes
     setTimeout(() => {
-      console.log('[TIMEOUT] Monitoring timeout reached');
       clearInterval(pollInterval);
       if (!isDeployComplete) {
-        resolve(foundNewDeploy ? 'timeout' : 'no-deploy');
+        resolve('timeout');
       }
-    }, 300000);
+    }, 600000);
   });
-
-  // Simulated build steps (steps 1-6)
+  
+  // Simulated build steps
   const simulatedSteps = [
-    {
-      id: "step1",
-      duration: 1200,
-      logs: ["> Analyzing changes...", "✓ Changes compiled"]
+    { 
+      id: "step1", 
+      duration: 1200, 
+      logs: ["> Analyzing changes...", "✓ Changes compiled"] 
     },
-    {
-      id: "step2",
-      duration: 1500,
-      logs: ["> Connecting to GitHub...", "> Pushing changes...", "✓ Pushed to main branch"]
+    { 
+      id: "step2", 
+      duration: 1500, 
+      logs: ["> Connecting to GitHub...", "> Pushing changes...", "✓ Pushed to main branch"] 
     },
-    {
-      id: "step3",
-      duration: 1000,
-      logs: ["> Webhook triggered", "✓ Build initiated"]
+    { 
+      id: "step3", 
+      duration: 1000, 
+      logs: ["> Webhook triggered", "✓ Build initiated"] 
     },
-    {
-      id: "step4",
-      duration: 2500,
-      logs: ["> npm install", "> Installing packages...", "✓ Dependencies installed"]
+    { 
+      id: "step4", 
+      duration: 2500, 
+      logs: ["> npm install", "> Installing packages...", "✓ Dependencies installed"] 
     },
-    {
-      id: "step5",
-      duration: 3000,
-      logs: ["> Building production bundle...", "> Processing pages...", "✓ Build complete"]
+    { 
+      id: "step5", 
+      duration: 3000, 
+      logs: ["> Building production bundle...", "> Processing pages...", "✓ Build complete"] 
     },
-    {
-      id: "step6",
-      duration: 1800,
-      logs: ["> Minifying assets...", "✓ Assets optimized"]
+    { 
+      id: "step6", 
+      duration: 1800, 
+      logs: ["> Minifying assets...", "✓ Assets optimized"] 
+    },
+    { 
+      id: "step7", 
+      duration: 2200, 
+      logs: ["> Uploading to CDN...", "> Distributing globally..."] 
     },
   ];
 
-  // Run through steps 1-6
+  // Run through the simulated steps
   for (let i = 0; i < simulatedSteps.length; i++) {
     const step = simulatedSteps[i];
     const stepEl = document.getElementById(step.id);
 
-    console.log(`[STEP] Starting ${step.id}`);
     stepEl.classList.add("active");
 
     for (let j = 0; j < step.logs.length; j++) {
@@ -224,87 +161,63 @@ async function runBuildWithMonitoring() {
 
     stepEl.classList.remove("active");
     stepEl.classList.add("completed");
-    const icon = stepEl.querySelector("i");
-    if (icon) {
-      icon.className = "ri-check-line";
-      icon.style.animation = "none";
-    }
+    stepEl.querySelector("i").className = "ri-check-line";
 
-    const progress = Math.min(80, ((i + 1) / simulatedSteps.length) * 80);
+    // Update progress (max 85% until real deploy completes)
+    const progress = Math.min(85, ((i + 1) / simulatedSteps.length) * 85);
     elements.progressBar.style.width = progress + "%";
-    console.log(`[PROGRESS] ${progress}%`);
   }
-
-  // Now use step7 for the final deployment wait
-  console.log('[STEP] Starting final deployment (step7)');
-  updateStep('step7', 'active');
-  addLog("> Uploading to CDN...", "info");
-  addLog("> Waiting for Netlify deployment...", "info");
-
+  
+  // Now wait for the real deploy to complete
+  updateStep('step8', 'active');
+  addLog("> Waiting for deployment to complete...", "info");
+  
+  // Add a loading indicator while waiting
+  let dotCount = 0;
+  const waitingInterval = setInterval(() => {
+    dotCount = (dotCount + 1) % 4;
+    const dots = '.'.repeat(dotCount);
+    addLog(`> Deploying${dots}`, "info");
+  }, 2000);
+  
+  // Wait for real deploy to finish
   const result = await monitorPromise;
-  console.log('[RESULT] Monitoring completed with result:', result);
-
+  clearInterval(waitingInterval);
+  
+  // Handle completion
   if (result === 'success') {
     addLog("✓ Deployed successfully!", "success");
-    updateStep('step7', 'completed');
-    elements.progressBar.style.width = '95%';
-
-    // Add step 8 finalization
-    await new Promise(r => setTimeout(r, 300));
-    updateStep('step8', 'active');
-    addLog("> Finalizing deployment...", "info");
-    await new Promise(r => setTimeout(r, 800));
-    addLog("✓ All done!", "success");
     updateStep('step8', 'completed');
     elements.progressBar.style.width = '100%';
-
+    
     await new Promise(r => setTimeout(r, 500));
     elements.buildComplete.style.display = "block";
-
-    console.log('[COMPLETE] Deployment successful, redirecting in 2s');
+    
     setTimeout(() => {
       window.location.href = "/";
     }, 2000);
   } else if (result === 'error') {
     addLog("✗ Deployment failed", "error");
     addLog("> Check Netlify dashboard for details", "info");
-    updateStep('step7', 'completed');
-  } else if (result === 'no-deploy') {
-    addLog("⚠ No new deploy detected", "info");
-    addLog("> Make sure changes were pushed to GitHub", "info");
-    updateStep('step7', 'completed');
   } else if (result === 'timeout') {
     addLog("⚠ Deployment is taking longer than expected", "info");
     addLog("> Check Netlify dashboard for status", "info");
-    updateStep('step7', 'completed');
   }
 }
 
 /* ==========================================
-  Main: Start Deployment Tracking
-  ========================================== */
+   Main: Start Deployment Tracking
+   ========================================== */
 async function startDeploymentTracking() {
-  console.log('[START] Starting deployment tracking');
-
   // Reset UI
   elements.buildLogs.innerHTML = "";
   elements.progressBar.style.width = "0%";
   elements.buildComplete.style.display = "none";
 
-  // Reset all steps - with safety check
+  // Reset all steps
   buildSteps.forEach(step => {
     const stepEl = document.getElementById(step.id);
-    if (stepEl) {
-      stepEl.className = "build-step";
-      const icon = stepEl.querySelector("i");
-      if (icon) {
-        icon.className = "ri-loader-4-line";
-        icon.style.animation = "";
-      }
-      console.log(`[DEBUG] Reset step: ${step.id}`);
-    } else {
-      console.error(`[ERROR] Step not found in DOM: ${step.id}`);
-    }
+    stepEl.className = "build-step";
   });
 
   // Start tracking
@@ -319,19 +232,17 @@ async function startDeploymentTracking() {
 }
 
 /* ==========================================
-  Initialize on Page Load
-  ========================================== */
+   Initialize on Page Load
+   ========================================== */
 window.addEventListener("DOMContentLoaded", () => {
-  console.log('[INIT] Page loaded, starting deployment tracking');
   startDeploymentTracking();
 });
 
 /* ==========================================
-  Handle Messages from Parent Window
-  ========================================== */
+   Handle Messages from Parent Window
+   ========================================== */
 window.addEventListener("message", (event) => {
   if (event.data === "start-build") {
-    console.log('[MESSAGE] Received start-build message');
     startDeploymentTracking();
   }
 });
