@@ -2177,11 +2177,17 @@ function clearEditableHighlights() {
   const iframeDoc = elements.siteIframe.contentDocument;
   if (iframeDoc) {
     // Remove all highlights from iframe
-    iframeDoc.querySelectorAll('.editable-highlight').forEach(el => el.remove());
-    iframeDoc.querySelectorAll('.markdown-edit-overlay').forEach(el => el.remove());
-    iframeDoc.querySelectorAll('.add-markdown-btn').forEach(el => el.remove());
+    iframeDoc
+      .querySelectorAll(".editable-highlight")
+      .forEach((el) => el.remove());
+    iframeDoc
+      .querySelectorAll(".markdown-edit-overlay")
+      .forEach((el) => el.remove());
+    iframeDoc
+      .querySelectorAll(".add-markdown-btn")
+      .forEach((el) => el.remove());
   }
-  
+
   // Clear the regions array
   adminState.editableRegions = [];
 }
@@ -2243,7 +2249,18 @@ function saveMarkdownChanges() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
-    const newFilename = `${type}s/${slug}.md`;
+
+    let newFilename;
+    if (type === "event") {
+      // Events need date-based filenames
+      const startDate = new Date(formData.startDate || Date.now());
+      const year = startDate.getFullYear();
+      const month = String(startDate.getMonth() + 1).padStart(2, "0");
+      const day = String(startDate.getDate()).padStart(2, "0");
+      newFilename = `${type}s/${year}-${month}-${day}-${slug}.md`;
+    } else {
+      newFilename = `${type}s/${slug}.md`;
+    }
 
     adminState.markdownChanges.created.push({
       type,
@@ -2499,20 +2516,20 @@ function insertNewMarkdownCard(type, data, filename) {
       <div class="club-card-glow"></div>
     `;
     grid.appendChild(card);
-  
+
     // Make sure the new card is visible (bypass initial animation states)
     card.style.opacity = "1";
     card.style.transform = "translateY(0)";
-  
+
     // REINITIALIZE THE CAROUSEL after adding new card
-    if (iframeWindow && typeof iframeWindow.initClubsCarousel === 'function') {
+    if (iframeWindow && typeof iframeWindow.initClubsCarousel === "function") {
       // Small delay to ensure DOM is ready
       setTimeout(() => {
         iframeWindow.initClubsCarousel();
-        console.log('Clubs carousel reinitialized after adding new club');
+        console.log("Clubs carousel reinitialized after adding new club");
       }, 100);
     }
-  
+
     // Create overlay/edit controls for this new card
     createMarkdownEditOverlay(card, "club");
   }
@@ -2524,24 +2541,36 @@ function insertNewMarkdownCard(type, data, filename) {
     card.className = "event-card";
     card.setAttribute("data-event-id", Math.random());
     card.setAttribute("data-markdown-file", filename);
-    
-    const imageUrl = (data.images && data.images[0]) ? 
-      (typeof data.images[0] === 'object' ? data.images[0].image : data.images[0]) : 
-      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop';
-    
+
+    const imageUrl =
+      data.images && data.images[0]
+        ? typeof data.images[0] === "object"
+          ? data.images[0].image
+          : data.images[0]
+        : "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop";
+
     const eventsManager = iframeWindow && iframeWindow.eventsManager;
-    const displayImageUrl = eventsManager && typeof eventsManager.convertGoogleDriveUrl === 'function' ? 
-      eventsManager.convertGoogleDriveUrl(imageUrl) : imageUrl;
-    
+    const displayImageUrl =
+      eventsManager && typeof eventsManager.convertGoogleDriveUrl === "function"
+        ? eventsManager.convertGoogleDriveUrl(imageUrl)
+        : imageUrl;
+
     card.innerHTML = `
-      <img src="${displayImageUrl}" alt="${escapeHtml(data.name || '')}" class="event-image" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
+      <img src="${displayImageUrl}" alt="${escapeHtml(
+      data.name || ""
+    )}" class="event-image" onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop'">
       <div class="event-content">
-        <div class="event-date">${data.startDate && data.endDate ? 
-          (eventsManager && typeof eventsManager.formatDate === 'function' ? 
-            eventsManager.formatDate(data.startDate, data.endDate) : 
-            new Date(data.startDate).toLocaleDateString()) : ''}</div>
+        <div class="event-date">${
+          data.startDate && data.endDate
+            ? eventsManager && typeof eventsManager.formatDate === "function"
+              ? eventsManager.formatDate(data.startDate, data.endDate)
+              : new Date(data.startDate).toLocaleDateString()
+            : ""
+        }</div>
         <h3 class="event-name">${escapeHtml(data.name || "")}</h3>
-        <p class="event-preview">${escapeHtml((data.body || "").substring(0, 100))}</p>
+        <p class="event-preview">${escapeHtml(
+          (data.body || "").substring(0, 100)
+        )}</p>
         <button class="event-view-more">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="9,18 15,12 9,6"></polyline>
@@ -2549,16 +2578,18 @@ function insertNewMarkdownCard(type, data, filename) {
         </button>
       </div>
     `;
-    
+
     // Insert in correct chronological order
     const newEventDate = new Date(data.startDate);
     const existingCards = Array.from(grid.querySelectorAll(".event-card"));
     let inserted = false;
-    
+
     for (const existingCard of existingCards) {
       const existingEventId = existingCard.getAttribute("data-event-id");
-      const existingEvent = eventsManager && eventsManager.eventsData?.find(e => e.id == existingEventId);
-      
+      const existingEvent =
+        eventsManager &&
+        eventsManager.eventsData?.find((e) => e.id == existingEventId);
+
       if (existingEvent) {
         const existingDate = new Date(existingEvent.startDate);
         if (newEventDate < existingDate) {
@@ -2568,21 +2599,24 @@ function insertNewMarkdownCard(type, data, filename) {
         }
       }
     }
-    
+
     if (!inserted) {
       grid.appendChild(card);
     }
-  
+
     // Make sure the new card is visible
     card.style.opacity = "1";
     card.style.transform = "translateY(0)";
-  
+
     // REINITIALIZE THE CAROUSEL after adding new event
     setTimeout(() => {
       const eventsManager = iframeWindow && iframeWindow.eventsManager;
-      if (eventsManager && typeof eventsManager.initEventsCarousel === 'function') {
+      if (
+        eventsManager &&
+        typeof eventsManager.initEventsCarousel === "function"
+      ) {
         eventsManager.initEventsCarousel();
-        console.log('Events carousel reinitialized after adding new event');
+        console.log("Events carousel reinitialized after adding new event");
       }
     }, 100);
 
