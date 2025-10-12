@@ -14,6 +14,7 @@ const buildSteps = [
   { id: "step5", label: "Building site" },
   { id: "step6", label: "Optimizing assets" },
   { id: "step7", label: "Deploying to CDN" },
+  { id: "step8", label: "Finalizing" },
 ];
 
 /* ==========================================
@@ -33,14 +34,14 @@ function addLog(text, type = "default") {
 function updateStep(stepId, status) {
   console.log(`[DEBUG] Updating step ${stepId} to ${status}`);
   const stepEl = document.getElementById(stepId);
-  
+
   if (!stepEl) {
     console.error(`[ERROR] Step element not found: ${stepId}`);
     return;
   }
 
   stepEl.classList.remove("active", "completed");
-  
+
   if (status === "active") {
     stepEl.classList.add("active");
   } else if (status === "completed") {
@@ -58,16 +59,16 @@ function updateStep(stepId, status) {
   ========================================== */
 async function getLatestDeploy(afterTime) {
   try {
-    const url = afterTime 
+    const url = afterTime
       ? `/.netlify/functions/deploy-status?after=${encodeURIComponent(afterTime)}`
       : '/.netlify/functions/deploy-status';
-    
+
     console.log('[DEBUG] Fetching deploy status from:', url);
-      
+
     const response = await fetch(url);
-    
+
     console.log('[DEBUG] Response status:', response.status);
-    
+
     if (!response.ok) {
       console.error('[ERROR] Function response not OK:', response.status);
       const text = await response.text();
@@ -77,12 +78,12 @@ async function getLatestDeploy(afterTime) {
 
     const data = await response.json();
     console.log('[DEBUG] Deploy data received:', data);
-    
+
     if (data.error) {
       console.error('[ERROR] Function returned error:', data.error);
       return null;
     }
-    
+
     return data;
   } catch (error) {
     console.error('[ERROR] Exception fetching deploy status:', error);
@@ -95,42 +96,42 @@ async function getLatestDeploy(afterTime) {
   ========================================== */
 async function runBuildWithMonitoring() {
   console.log('[START] Beginning build monitoring');
-  
+
   // Record the start time to track NEW deploys only
   const startTime = new Date().toISOString();
   console.log('[DEBUG] Start time recorded:', startTime);
-  
+
   let isDeployComplete = false;
   let deployState = null;
   let foundNewDeploy = false;
   let pollCount = 0;
-  
+
   // Start monitoring for NEW deploys in background
   const monitorPromise = new Promise((resolve) => {
     console.log('[DEBUG] Starting monitoring promise');
-    
+
     const pollInterval = setInterval(async () => {
       pollCount++;
       console.log(`[POLL #${pollCount}] Checking for deploys...`);
-      
+
       const deploy = await getLatestDeploy(startTime);
-      
+
       if (deploy) {
         console.log('[DEBUG] Deploy found:', {
           id: deploy.id,
           state: deploy.state,
           created_at: deploy.created_at
         });
-        
+
         const deployTime = new Date(deploy.created_at);
         const startTimeDate = new Date(startTime);
-        
+
         console.log('[DEBUG] Comparing times:', {
           deployTime: deployTime.toISOString(),
           startTime: startTimeDate.toISOString(),
           isNewer: deployTime > startTimeDate
         });
-        
+
         // Only track deploys created AFTER we started monitoring
         if (deployTime > startTimeDate) {
           if (!foundNewDeploy) {
@@ -138,10 +139,10 @@ async function runBuildWithMonitoring() {
             console.log('[SUCCESS] Found new deploy!');
             addLog(`✓ Found deploy: ${deploy.id.substring(0, 8)}`, "success");
           }
-          
+
           deployState = deploy.state;
           console.log('[DEBUG] Deploy state:', deployState);
-          
+
           if (deployState === 'ready') {
             console.log('[SUCCESS] Deploy completed successfully!');
             isDeployComplete = true;
@@ -162,7 +163,7 @@ async function runBuildWithMonitoring() {
         console.log('[INFO] No deploy data received');
       }
     }, 3000); // Poll every 3 seconds
-    
+
     // Timeout after 5 minutes
     setTimeout(() => {
       console.log('[TIMEOUT] Monitoring timeout reached');
@@ -172,38 +173,38 @@ async function runBuildWithMonitoring() {
       }
     }, 300000);
   });
-  
+
   // Simulated build steps (steps 1-6)
   const simulatedSteps = [
-    { 
-      id: "step1", 
-      duration: 1200, 
-      logs: ["> Analyzing changes...", "✓ Changes compiled"] 
+    {
+      id: "step1",
+      duration: 1200,
+      logs: ["> Analyzing changes...", "✓ Changes compiled"]
     },
-    { 
-      id: "step2", 
-      duration: 1500, 
-      logs: ["> Connecting to GitHub...", "> Pushing changes...", "✓ Pushed to main branch"] 
+    {
+      id: "step2",
+      duration: 1500,
+      logs: ["> Connecting to GitHub...", "> Pushing changes...", "✓ Pushed to main branch"]
     },
-    { 
-      id: "step3", 
-      duration: 1000, 
-      logs: ["> Webhook triggered", "✓ Build initiated"] 
+    {
+      id: "step3",
+      duration: 1000,
+      logs: ["> Webhook triggered", "✓ Build initiated"]
     },
-    { 
-      id: "step4", 
-      duration: 2500, 
-      logs: ["> npm install", "> Installing packages...", "✓ Dependencies installed"] 
+    {
+      id: "step4",
+      duration: 2500,
+      logs: ["> npm install", "> Installing packages...", "✓ Dependencies installed"]
     },
-    { 
-      id: "step5", 
-      duration: 3000, 
-      logs: ["> Building production bundle...", "> Processing pages...", "✓ Build complete"] 
+    {
+      id: "step5",
+      duration: 3000,
+      logs: ["> Building production bundle...", "> Processing pages...", "✓ Build complete"]
     },
-    { 
-      id: "step6", 
-      duration: 1800, 
-      logs: ["> Minifying assets...", "✓ Assets optimized"] 
+    {
+      id: "step6",
+      duration: 1800,
+      logs: ["> Minifying assets...", "✓ Assets optimized"]
     },
   ];
 
@@ -233,24 +234,33 @@ async function runBuildWithMonitoring() {
     elements.progressBar.style.width = progress + "%";
     console.log(`[PROGRESS] ${progress}%`);
   }
-  
+
   // Now use step7 for the final deployment wait
   console.log('[STEP] Starting final deployment (step7)');
   updateStep('step7', 'active');
   addLog("> Uploading to CDN...", "info");
   addLog("> Waiting for Netlify deployment...", "info");
-  
+
   const result = await monitorPromise;
   console.log('[RESULT] Monitoring completed with result:', result);
-  
+
   if (result === 'success') {
     addLog("✓ Deployed successfully!", "success");
     updateStep('step7', 'completed');
+    elements.progressBar.style.width = '95%';
+
+    // Add step 8 finalization
+    await new Promise(r => setTimeout(r, 300));
+    updateStep('step8', 'active');
+    addLog("> Finalizing deployment...", "info");
+    await new Promise(r => setTimeout(r, 800));
+    addLog("✓ All done!", "success");
+    updateStep('step8', 'completed');
     elements.progressBar.style.width = '100%';
-    
+
     await new Promise(r => setTimeout(r, 500));
     elements.buildComplete.style.display = "block";
-    
+
     console.log('[COMPLETE] Deployment successful, redirecting in 2s');
     setTimeout(() => {
       window.location.href = "/";
@@ -275,7 +285,7 @@ async function runBuildWithMonitoring() {
   ========================================== */
 async function startDeploymentTracking() {
   console.log('[START] Starting deployment tracking');
-  
+
   // Reset UI
   elements.buildLogs.innerHTML = "";
   elements.progressBar.style.width = "0%";
