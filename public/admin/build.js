@@ -106,72 +106,78 @@ async function runBuildWithMonitoring() {
   let pollCount = 0;
   
   // Start monitoring for NEW deploys in background
-  const monitorPromise = new Promise((resolve) => {
-    console.log('[DEBUG] Starting monitoring promise');
+const monitorPromise = new Promise((resolve) => {
+  console.log('[DEBUG] Starting monitoring promise');
+  
+  const pollInterval = setInterval(async () => {
+    pollCount++;
+    console.log(`[POLL #${pollCount}] Checking for deploys...`);
     
-    const pollInterval = setInterval(async () => {
-      pollCount++;
-      console.log(`[POLL #${pollCount}] Checking for deploys...`);
+    const deploy = await getLatestDeploy(startTime);
+    
+    if (deploy) {
+      console.log('[DEBUG] Deploy found:', {
+        id: deploy.id,
+        state: deploy.state,
+        created_at: deploy.created_at
+      });
       
-      const deploy = await getLatestDeploy(startTime);
+      const deployTime = new Date(deploy.created_at);
+      const startTimeDate = new Date(startTime);
       
-      if (deploy) {
-        console.log('[DEBUG] Deploy found:', {
-          id: deploy.id,
-          state: deploy.state,
-          created_at: deploy.created_at
-        });
+      console.log('[DEBUG] Comparing times:', {
+        deployTime: deployTime.toISOString(),
+        startTime: startTimeDate.toISOString(),
+        isNewer: deployTime > startTimeDate,
+        timeDiffSeconds: (startTimeDate - deployTime) / 1000
+      });
+      
+      // Accept deploys that are either:
+      // 1. Created after we started monitoring, OR
+      // 2. Created within 12 seconds BEFORE (likely in-progress when page loaded)
+      const timeDiffMs = startTimeDate - deployTime;
+      const isRecentEnough = timeDiffMs < 12000; // 12 seconds grace period
+
+      if (deployTime > startTimeDate || isRecentEnough) {
+        if (!foundNewDeploy) {
+          foundNewDeploy = true;
+          console.log('[SUCCESS] Found deploy to track!');
+          addLog(`✓ Tracking deploy: ${deploy.id.substring(0, 8)}`, "success");
+        }
         
-        const deployTime = new Date(deploy.created_at);
-        const startTimeDate = new Date(startTime);
+        deployState = deploy.state;
+        console.log('[DEBUG] Deploy state:', deployState);
         
-        console.log('[DEBUG] Comparing times:', {
-          deployTime: deployTime.toISOString(),
-          startTime: startTimeDate.toISOString(),
-          isNewer: deployTime > startTimeDate
-        });
-        
-        // Only track deploys created AFTER we started monitoring
-        if (deployTime > startTimeDate) {
-          if (!foundNewDeploy) {
-            foundNewDeploy = true;
-            console.log('[SUCCESS] Found new deploy!');
-            addLog(`✓ Found deploy: ${deploy.id.substring(0, 8)}`, "success");
-          }
-          
-          deployState = deploy.state;
-          console.log('[DEBUG] Deploy state:', deployState);
-          
-          if (deployState === 'ready') {
-            console.log('[SUCCESS] Deploy completed successfully!');
-            isDeployComplete = true;
-            clearInterval(pollInterval);
-            resolve('success');
-          } else if (deployState === 'error') {
-            console.log('[ERROR] Deploy failed!');
-            isDeployComplete = true;
-            clearInterval(pollInterval);
-            resolve('error');
-          } else {
-            console.log('[INFO] Deploy still in progress...');
-          }
+        if (deployState === 'ready') {
+          console.log('[SUCCESS] Deploy completed successfully!');
+          isDeployComplete = true;
+          clearInterval(pollInterval);
+          resolve('success');
+        } else if (deployState === 'error') {
+          console.log('[ERROR] Deploy failed!');
+          isDeployComplete = true;
+          clearInterval(pollInterval);
+          resolve('error');
         } else {
-          console.log('[INFO] Deploy is older than start time, ignoring');
+          console.log('[INFO] Deploy still in progress...');
         }
       } else {
-        console.log('[INFO] No deploy data received');
+        console.log('[INFO] Deploy is too old, ignoring');
       }
-    }, 3000); // Poll every 3 seconds
-    
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      console.log('[TIMEOUT] Monitoring timeout reached');
-      clearInterval(pollInterval);
-      if (!isDeployComplete) {
-        resolve(foundNewDeploy ? 'timeout' : 'no-deploy');
-      }
-    }, 300000);
-  });
+    } else {
+      console.log('[INFO] No deploy data received');
+    }
+  }, 5000); // Poll every 5 seconds
+  
+  // Timeout after 5 minutes
+  setTimeout(() => {
+    console.log('[TIMEOUT] Monitoring timeout reached');
+    clearInterval(pollInterval);
+    if (!isDeployComplete) {
+      resolve(foundNewDeploy ? 'timeout' : 'no-deploy');
+    }
+  }, 300000);
+});
   
   // Simulated build steps (steps 1-6)
   const simulatedSteps = [
