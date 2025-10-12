@@ -1,4 +1,4 @@
-<img src="https://github.com/ElliottStarosta/2025_Java_Code_Review_ICS4U/blob/master/src/main/resources/static/images/icon-full.png?raw=true" alt="STEM Council Logo" width="400"/>
+<img src="[https://github.com/ElliottStarosta/2025_Java_Code_Review_ICS4U/blob/master/src/main/resources/static/images/icon-full.png?raw=true](https://github.com/ElliottStarosta/STEM_Council/blob/main/src/images/logo.png?raw=true)" alt="STEM Council Logo" width="400"/>
 
 ## Table of Contents
 
