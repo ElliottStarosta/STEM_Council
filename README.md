@@ -16,8 +16,6 @@
 * [Deployment](#deployment)
 * [Configuration](#configuration)
 * [Troubleshooting](#troubleshooting)
-* [Support](#support)
-* [Contributing](#contributing)
 
 ---
 
@@ -42,8 +40,8 @@ The website features dynamic content management, interactive animations, and a r
 
 * **Netlify CMS integration** for easy content updates
 * **JSON-based content system** for flexible data management
-* **Markdown support** for rich text content in events and clubs
-* **Real-time content updates** without code changes
+* **Markdown support** for text content in events
+* **Real-time content updates** without code changes: supports Markdown and JSON
 
 ### Interactive STEM Elements
 
@@ -299,46 +297,6 @@ Vite configuration in `package.json`:
 - Test responsive design on different screen sizes
 
 ---
-
-## Support
-
-For issues and questions:
-
-1. **Check the troubleshooting section** above
-2. **Review the admin guide** in `ADMIN_GUIDE.md`
-3. **Check Netlify CMS setup** in `NETLIFY_CMS_SETUP.md`
-4. **Contact the development team** via the contact form on the website
-
----
-
-## Contributing
-
-### Development Workflow
-
-1. **Fork the repository** on GitHub
-2. **Create a feature branch**: `git checkout -b feature/new-feature`
-3. **Make your changes** and test thoroughly
-4. **Commit your changes**: `git commit -m "Add new feature"`
-5. **Push to your fork**: `git push origin feature/new-feature`
-6. **Create a Pull Request** on GitHub
-
-### Code Standards
-
-- Use semantic HTML elements
-- Follow CSS naming conventions (BEM methodology)
-- Write clean, commented JavaScript
-- Ensure responsive design principles
-- Test across different browsers and devices
-
-### Content Guidelines
-
-- Use clear, engaging language for all content
-- Include relevant images and media
-- Ensure all links are working and accessible
-- Follow the established content structure
-
----
-
 ## License
 
 This project is developed for the Earl of March Secondary School STEM Council. All rights reserved.
