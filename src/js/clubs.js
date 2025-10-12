@@ -156,46 +156,41 @@ function initClubsCarousel() {
   }
   
   function updateActiveClubIndicator() {
-    const dots = document.querySelectorAll(".clubs-indicator .indicator-dot");
+  const dots = document.querySelectorAll(".clubs-indicator .indicator-dot");
+  
+  dots.forEach((dot, index) => {
+    const isActive = index === currentSlide;
+    const hasActiveClass = dot.classList.contains("active");
     
-    dots.forEach((dot, index) => {
-      if (index === currentSlide) {
-        if (!dot.classList.contains("active")) {
-          dot.classList.add("active");
-          
-          gsap.fromTo(dot, 
-            { scale: 1 },
-            { 
-              scale: 1.2, 
+    if (isActive && !hasActiveClass) {
+      // Becoming active
+      dot.classList.add("active");
+      gsap.fromTo(dot, 
+        { scale: 1 },
+        { 
+          scale: 1.2, 
+          duration: 0.2, 
+          ease: "power2.out",
+          onComplete: () => {
+            gsap.to(dot, { 
+              scale: 1, 
               duration: 0.2, 
-              ease: "power2.out",
-              onComplete: () => {
-                gsap.to(dot, { 
-                  scale: 1, 
-                  duration: 0.2, 
-                  ease: "power2.in" 
-                });
-              }
-            }
-          );
+              ease: "power2.in" 
+            });
+          }
         }
-      } else {
-        if (dot.classList.contains("active")) {
-          gsap.to(dot, {
-            scale: 0.9,
-            duration: 0.2,
-            ease: "power2.in",
-            onComplete: () => {
-              dot.classList.remove("active");
-              gsap.to(dot, { scale: 1, duration: 0.2 });
-            }
-          });
-        } else {
-          dot.classList.remove("active");
-        }
-      }
-    });
-  }
+      );
+    } else if (!isActive && hasActiveClass) {
+      // Becoming inactive
+      dot.classList.remove("active");
+      gsap.to(dot, {
+        scale: 1,
+        duration: 0.2,
+        ease: "power2.in"
+      });
+    }
+  });
+}
   
   function goToPrevClubSlide() {
     if (isAnimating || currentSlide === 0) return;

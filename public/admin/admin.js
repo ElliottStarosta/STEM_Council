@@ -159,17 +159,11 @@ elements.editModeToggle.addEventListener("click", () => {
     setTimeout(() => {
       scanEditableContent();
       scanMarkdownContent();
-      startPositionTracking(); // Start continuous tracking
+      startPositionTracking();
     }, 500);
   } else {
-    stopPositionTracking(); // Stop tracking
-    clearEditableHighlights();
-    const iframeDoc = elements.siteIframe.contentDocument;
-    if (iframeDoc) {
-      iframeDoc.querySelectorAll(".add-markdown-btn").forEach((btn) => {
-        btn.style.display = "none";
-      });
-    }
+    stopPositionTracking();
+    clearEditableHighlights(); // This now properly removes everything from iframe
   }
 });
 
@@ -2180,10 +2174,17 @@ function escapeHtml(text) {
 
 // Clear editable highlights
 function clearEditableHighlights() {
-  elements.editOverlay.innerHTML = "";
+  const iframeDoc = elements.siteIframe.contentDocument;
+  if (iframeDoc) {
+    // Remove all highlights from iframe
+    iframeDoc.querySelectorAll('.editable-highlight').forEach(el => el.remove());
+    iframeDoc.querySelectorAll('.markdown-edit-overlay').forEach(el => el.remove());
+    iframeDoc.querySelectorAll('.add-markdown-btn').forEach(el => el.remove());
+  }
+  
+  // Clear the regions array
   adminState.editableRegions = [];
 }
-
 // Open edit modal
 function openEditModal(element) {
   const editableId = element.dataset.editable;
