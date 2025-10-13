@@ -1,11 +1,21 @@
 {
   "clubs": [
-    "arduino-club.md",
-    "asd copy 2.md",
-    "asd copy 3.md",
-    "asd copy.md",
-    "asd.md",
-    "computer-science-club.md"
+    "canadas-future-healthcare-students.md",
+    "computer-science-club.md",
+    "cybersecurity-club.md",
+    "disease-discovery-club.md",
+    "earl-of-march-prime-number-research.md",
+    "electronic-vehicle-competition.md",
+    "hack-club-hardware.md",
+    "hackathon-coding.md",
+    "hosa-future-health-professionals.md",
+    "math-club.md",
+    "neuromed.md",
+    "nutritional-science-fitness.md",
+    "rust-club.md",
+    "science-club.md",
+    "under-the-arch.md",
+    "weather-climate-club.md"
   ],
   "events": [
     "2025-07-15-summer-tech-conference-2025.md",
@@ -23,9 +33,16 @@
   ],
   "resources": [
     "3blue1brown-mathematics.md",
+    "arduino-ide.md",
+    "codecademy.md",
+    "crash-course-chemistry.md",
     "cs50-introduction-computer-science.md",
     "desmos-graphing-calculator.md",
+    "first-robotics-competition.md",
+    "khan-academy-physics.md",
     "organic-chem-tutor.md",
+    "protein-data-bank.md",
+    "waterloo-computing-contests.md",
     "waterloo-math-contests.md"
   ]
 }

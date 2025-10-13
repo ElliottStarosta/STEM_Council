@@ -1,8 +1,12 @@
 ---
-title: "Organic Chem Tutor"
-description: "THE GOAT OF STEM"
-url: "https://www.youtube.com/channel/UCEWpbFLzoYGPfuWUMFPSaoA"
+title: "The Organic Chemistry Tutor"
+description: "Step-by-step video tutorials covering chemistry, math, and physics topics"
+url: "https://www.youtube.com/c/TheOrganicChemistryTutor"
 type: "videos"
-icon: "ri-star-line"
 tags:
+  - tag: "Chemistry"
+  - tag: "Mathematics"
+  - tag: "Physics"
+  - tag: "Video Tutorials"
+icon: "ri-video-fill"
 ---
