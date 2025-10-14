@@ -668,18 +668,39 @@ function extractMarkdownData(element, type) {
 
     // Try to get date from data attributes if available
     const eventId = element.dataset.eventId;
-    // Access eventsManager from inside the iframe, not the admin window
-    const iframeWindow =
-      elements.siteIframe && elements.siteIframe.contentWindow;
-    const eventsManager = iframeWindow && iframeWindow.eventsManager;
-    if (eventId && eventsManager && eventsManager.eventsData) {
-      const eventData = eventsManager.eventsData.find((e) => e.id == eventId);
-      if (eventData) {
-        data.startDate = eventData.startDate;
-        data.endDate = eventData.endDate;
-        data.images = eventData.images || [];
-        data.body = eventData.description || "";
+    const filename = element.dataset.markdownFile;
+    
+    // First, check if this is a newly created event in adminState
+    let eventData = null;
+    if (filename) {
+      const createdEvent = adminState.markdownChanges.created.find(
+        (item) => item.filename === filename && item.type === "event"
+      );
+      if (createdEvent) {
+        eventData = createdEvent.data;
       }
+    }
+    
+    // If not found in created events, check eventsManager
+    if (!eventData) {
+      const iframeWindow =
+        elements.siteIframe && elements.siteIframe.contentWindow;
+      const eventsManager = iframeWindow && iframeWindow.eventsManager;
+      if (eventId && eventsManager && eventsManager.eventsData) {
+        eventData = eventsManager.eventsData.find((e) => e.id == eventId);
+      }
+    }
+    
+    // If still not found, check modified events
+    if (!eventData && filename) {
+      eventData = adminState.markdownChanges.modified[filename];
+    }
+    
+    if (eventData) {
+      data.startDate = eventData.startDate;
+      data.endDate = eventData.endDate;
+      data.images = eventData.images || [];
+      data.body = eventData.description || eventData.body || "";
     }
   }
 
@@ -2608,9 +2629,31 @@ function insertNewMarkdownCard(type, data, filename) {
     card.style.opacity = "1";
     card.style.transform = "translateY(0)";
 
+    // Store the event data in eventsManager for later retrieval
+    if (eventsManager) {
+      // Add the event data to eventsManager.eventsData so it can be found during editing
+      const eventId = card.getAttribute("data-event-id");
+      const eventData = {
+        id: eventId,
+        name: data.name,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        description: data.body,
+        images: data.images || [],
+        filename: filename
+      };
+      
+      // Initialize eventsData array if it doesn't exist
+      if (!eventsManager.eventsData) {
+        eventsManager.eventsData = [];
+      }
+      
+      // Add the new event data
+      eventsManager.eventsData.push(eventData);
+    }
+
     // REINITIALIZE THE CAROUSEL after adding new event
     setTimeout(() => {
-      const eventsManager = iframeWindow && iframeWindow.eventsManager;
       if (
         eventsManager &&
         typeof eventsManager.initEventsCarousel === "function"
