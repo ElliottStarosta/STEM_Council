@@ -263,11 +263,11 @@
     }, "+=0.1");
 
 
-    tl.call(() => {
-      if (typeof ScrollTrigger !== 'undefined') {
-        ScrollTrigger.refresh();
-      }
-  });
+  //   tl.call(() => {
+  //     if (typeof ScrollTrigger !== 'undefined') {
+  //       ScrollTrigger.refresh();
+  //     }
+  // });
 }
 
   // Enhanced particles animation
