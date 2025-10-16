@@ -1,5 +1,5 @@
 ---
-name: "Computer Science Club"
+name: "Computer Science Club Change"
 description: "Join fellow programmers to explore algorithms, build amazing projects, and compete in coding competitions. From web development to AI, we cover it all."
 icon: "ri-code-s-slash-line"
 socialLinks:
