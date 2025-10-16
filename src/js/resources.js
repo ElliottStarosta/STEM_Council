@@ -261,7 +261,14 @@
       stagger: 0.1,
       ease: "power3.out"
     }, "+=0.1");
-  }
+
+
+    tl.call(() => {
+      if (typeof ScrollTrigger !== 'undefined') {
+        ScrollTrigger.refresh();
+      }
+  });
+}
 
   // Enhanced particles animation
   function initResourcesParticles() {
