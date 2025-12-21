@@ -1,6 +1,9 @@
 // Register ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
+
+let resourceScrollTriggers = [];
+
 // Initialize resources animations (also runs immediately if DOM already loaded)
 function initResources() {
   loadResourcesContent();
@@ -16,8 +19,13 @@ if (document.readyState === "loading") {
   initResources();
 }
 
+
 // Main resources animation function
 function initResourcesAnimations() {
+  // Kill existing triggers only for resources section
+  resourceScrollTriggers.forEach(trigger => trigger.kill());
+  resourceScrollTriggers = [];
+
   // Set initial states to prevent FOUC
   gsap.set(".resources-title", { y: 50, opacity: 0 });
   gsap.set(".resources-subtitle", { y: 30, opacity: 0 });
@@ -28,110 +36,122 @@ function initResourcesAnimations() {
   gsap.set(".resources-particles .particle", { scale: 0, opacity: 0 });
 
   // Header animations with ScrollTrigger
-  ScrollTrigger.create({
-    trigger: ".resources-header",
-    start: "top 85%",
-    end: "bottom 20%",
-    toggleActions: "play none none reverse",
-    animation: gsap
-      .timeline()
-      .to(".resources-title", {
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources-header",
+      start: "top 85%",
+      end: "bottom 20%",
+      toggleActions: "play none none reverse",
+      animation: gsap
+        .timeline()
+        .to(".resources-title", {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          ease: "power3.out",
+        })
+        .to(
+          ".resources-subtitle",
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power3.out",
+          },
+          "-=0.6"
+        ),
+    })
+  );
+
+  // Category tabs animation
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources-categories",
+      start: "top 90%",
+      end: "bottom 20%",
+      toggleActions: "play none none reverse",
+      animation: gsap.to(".category-tabs", {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: "back.out(1.7)",
+      }),
+    })
+  );
+
+  // Resource cards staggered animation
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources-grid",
+      start: "top 80%",
+      end: "bottom 20%",
+      toggleActions: "play none none reverse",
+      animation: gsap.to(".resource-card", {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        duration: 0.8,
+        stagger: {
+          each: 0.15,
+          from: "start",
+        },
+        ease: "power3.out",
+      }),
+    })
+  );
+
+  // CTA section animation
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources-cta",
+      start: "top 85%",
+      end: "bottom 20%",
+      toggleActions: "play none none reverse",
+      animation: gsap.to(".resources-cta", {
         y: 0,
         opacity: 1,
         duration: 1,
         ease: "power3.out",
-      })
-      .to(
-        ".resources-subtitle",
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          ease: "power3.out",
-        },
-        "-=0.6"
-      ),
-  });
-
-  // Category tabs animation
-  ScrollTrigger.create({
-    trigger: ".resources-categories",
-    start: "top 90%",
-    end: "bottom 20%",
-    toggleActions: "play none none reverse",
-    animation: gsap.to(".category-tabs", {
-      y: 0,
-      opacity: 1,
-      duration: 0.8,
-      ease: "back.out(1.7)",
-    }),
-  });
-
-  // Resource cards staggered animation
-  ScrollTrigger.create({
-    trigger: ".resources-grid",
-    start: "top 80%",
-    end: "bottom 20%",
-    toggleActions: "play none none reverse",
-    animation: gsap.to(".resource-card", {
-      y: 0,
-      opacity: 1,
-      scale: 1,
-      duration: 0.8,
-      stagger: {
-        each: 0.15,
-        from: "start",
-      },
-      ease: "power3.out",
-    }),
-  });
-
-  // CTA section animation
-  ScrollTrigger.create({
-    trigger: ".resources-cta",
-    start: "top 85%",
-    end: "bottom 20%",
-    toggleActions: "play none none reverse",
-    animation: gsap.to(".resources-cta", {
-      y: 0,
-      opacity: 1,
-      duration: 1,
-      ease: "power3.out",
-    }),
-  });
+      }),
+    })
+  );
 
   // Background circles animation
-  ScrollTrigger.create({
-    trigger: ".resources",
-    start: "top 90%",
-    end: "bottom 20%",
-    toggleActions: "play none none reverse",
-    animation: gsap.to(".resources-bg-circle", {
-      scale: 1,
-      opacity: 1,
-      duration: 1.5,
-      stagger: 0.3,
-      ease: "back.out(1.7)",
-    }),
-  });
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources",
+      start: "top 90%",
+      end: "bottom 20%",
+      toggleActions: "play none none reverse",
+      animation: gsap.to(".resources-bg-circle", {
+        scale: 1,
+        opacity: 1,
+        duration: 1.5,
+        stagger: 0.3,
+        ease: "back.out(1.7)",
+      }),
+    })
+  );
 
   // Particles animation
-  ScrollTrigger.create({
-    trigger: ".resources",
-    start: "top 80%",
-    end: "bottom 20%",
-    toggleActions: "play none none reverse",
-    animation: gsap.to(".resources-particles .particle", {
-      scale: 1,
-      opacity: 0.8,
-      duration: 2,
-      stagger: {
-        each: 0.2,
-        from: "random",
-      },
-      ease: "back.out(1.7)",
-    }),
-  });
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources",
+      start: "top 80%",
+      end: "bottom 20%",
+      toggleActions: "play none none reverse",
+      animation: gsap.to(".resources-particles .particle", {
+        scale: 1,
+        opacity: 0.8,
+        duration: 2,
+        stagger: {
+          each: 0.2,
+          from: "random",
+        },
+        ease: "back.out(1.7)",
+      }),
+    })
+  );
 
   // Parallax effect for background elements
   gsap.to(".resources-bg-circle-1", {
@@ -159,25 +179,27 @@ function initResourcesAnimations() {
   });
 
   // Scroll-based parallax for cards
-  ScrollTrigger.create({
-    trigger: ".resources",
-    start: "top bottom",
-    end: "bottom top",
-    scrub: 1,
-    onUpdate: (self) => {
-      const progress = self.progress;
-      const cards = document.querySelectorAll(".resource-card");
+  resourceScrollTriggers.push(
+    ScrollTrigger.create({
+      trigger: ".resources",
+      start: "top bottom",
+      end: "bottom top",
+      scrub: 1,
+      onUpdate: (self) => {
+        const progress = self.progress;
+        const cards = document.querySelectorAll(".resource-card");
 
-      cards.forEach((card, index) => {
-        const direction = index % 2 === 0 ? 1 : -1;
-        const speed = 20 + (index % 3) * 10;
+        cards.forEach((card, index) => {
+          const direction = index % 2 === 0 ? 1 : -1;
+          const speed = 20 + (index % 3) * 10;
 
-        gsap.set(card, {
-          y: progress * speed * direction * 0.5,
+          gsap.set(card, {
+            y: progress * speed * direction * 0.5,
+          });
         });
-      });
-    },
-  });
+      },
+    })
+  );
 }
 
 // Category tabs functionality
@@ -257,7 +279,7 @@ function filterResourceCards(category, cards) {
     });
   });
 
-  // Fade in visible cards
+  // Fade in visible cards - REMOVED the re-initialization here
   tl.to(
     cards,
     {
@@ -271,17 +293,9 @@ function filterResourceCards(category, cards) {
     "+=0.1"
   );
 
+  // Only refresh ScrollTrigger, don't kill and re-init everything
   tl.call(() => {
     if (typeof ScrollTrigger !== "undefined") {
-      // Kill all ScrollTriggers to reset them
-      ScrollTrigger.getAll().forEach((trigger) => {
-        trigger.kill();
-      });
-
-      // Re-initialize animations for sections below
-      initResourcesAnimations();
-
-      // Refresh everything
       ScrollTrigger.refresh();
     }
   });
